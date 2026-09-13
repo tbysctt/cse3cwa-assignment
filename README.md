@@ -1,36 +1,134 @@
 # CSE3CWA Assessment: Phoneme Activity Builder
 
-This is a three-part assignment:
+A specialised activity builder designed for Speech Pathology educators and students. Teachers configure phoneme-based classroom activities (a wordle with phonetic symbols and a phoneme word search), preview student gameplay live in the browser, and export them as **single self-contained `.html` files** that run offline in any modern web browser as a standalone web app.
 
-1. Frontend design and usability
-2. Full-stack cloud application implementation
-3. The third stage extends the same project into a data-driven web application and reporting stage. The aim is to demonstrate that the Wordle and Word Search builder can store, process, monitor, and present data in a meaningful operational format.
+This is a three-stage assignment for CSE3CWA:
 
-The app itself is a phoneme acitivity builder, designed for teachers who want to prepare activities for Speech Pathology students. Teachers can configure settings, preview student gameplay, and download a **single self-contained `.html`** file for browser use.
+1. **Frontend Design and Usability (Part 1)**: A clear, accessible, and responsive builder interface supporting phoneme symbol gameplay, live interactive previews, customizable preferences, and zero-dependency standalone HTML exports.
+2. **Full-Stack Cloud Application Implementation (Part 2)**: Introduces database-driven word management, API services, and user authentication.
+3. **Data-Driven Web Application and Reporting (Part 3)**: Extends the platform to store student performance data, process activity telemetry, and present clinical learning analytics.
 
-**Accessibility and usability highlights:**
+> [!NOTE]
+> **Clinical & Pedagogical Context**
+> In Speech Pathology and phonological awareness education, learning relies on distinguishing discrete speech sounds (**phonemes**) rather than standard English spelling (**graphemes**). For instance, the word _"ship"_ consists of 4 letters but only 3 phonemes: `/ʃ/`, `/ɪ/`, `/p/`. The Australian English High-Category Equivalent (HCE) corpus uses International Phonetic Alphabet (IPA) transcriptions. This application enables speech pathology educators to create targeted phonemic exercises that bridge spoken sounds with their corresponding written letters and acoustic cues.
 
-- Keyboard-navigable controls and action buttons
-- Visible focus states and skip link
-- Hint tooltips with phoneme-to-grapheme mapping (e.g. `/θ/ → TH (as in thin)`)
-- Color + pattern feedback for Wordle status clarity
-- Responsive layout across compact and wide screens
+## Local Development & Testing
 
-## Local development
+### Setup and Scripts
 
 ```sh
-# Install NPM dependencies
+# Install dependencies
 npm install
 
-# Run the development server, available at localhost:3000
+# Run development server (http://localhost:3000)
 npm run dev
 
-# Run the unit tests
+# Run unit and integration tests
 npm run test
 
-# Run ESLint
+# Run test coverage report
+npm run test:coverage
+
+# Run ESLint validation
 npm run lint
 
-# Build the app for production
+# Compile production build
 npm run build
 ```
+
+## Persistent Interface Preferences
+
+Accessibility and interface customization are built around three persistent preference dimensions stored in HTTP cookies (`Max-Age: 1 year`, `SameSite: Lax`):
+
+| Preference         | Supported Options                                       | Default       | Persistence Mechanism                                            |
+| :----------------- | :------------------------------------------------------ | :------------ | :--------------------------------------------------------------- |
+| **Colour Theme**   | `light`, `dark`, `system`                               | `system`      | Server Cookie (`theme`) + SSR Class + Client MediaQuery listener |
+| **Text Size**      | `normal` (100%), `large` (112.5%), `extra-large` (125%) | `normal`      | Server Cookie (`text_size`) + SSR `data-text-size` attribute     |
+| **Layout Density** | `comfortable`, `compact`                                | `comfortable` | Server Cookie (`density`) + SSR `data-density` attribute         |
+
+### Zero-Layout-Shift SSR Hydration
+
+Rather than applying preferences client-side in `useEffect` (which causes noticeable layout shifts and font flickering), preferences are read directly from `cookies()` inside `app/layout.tsx` on the server:
+
+- The `<html>` and `<body>` tags receive `data-theme`, `data-text-size`, and `data-density` attributes before initial HTML streaming.
+- CSS variables (`--page-pad-y`, `--section-gap`, `--surface-pad`, `--control-min-height`) and root `font-size` scale immediately during HTML rendering.
+- For `theme: "system"`, `ThemeApplier` registers an OS `prefers-color-scheme` listener that dynamically switches classes if the user changes system settings.
+
+## Game & Core Algorithms
+
+### Wordle Two-Pass Scoring Algorithm
+
+Phonemic Wordle scores guesses against target words using a strict **two-pass evaluation** to guarantee correctness when words contain duplicate sounds:
+
+```typescript
+// Two-pass frequency-capped scoring
+Pass 1 (Exact Matches):
+  For each index i in 0..length-1:
+    If guess[i].ipa === target[i].ipa:
+      mark result[i] = "correct"
+      decrement available count for target[i].ipa
+
+Pass 2 (Misplaced Matches):
+  For each index i in 0..length-1:
+    If result[i] is already "correct": skip
+    If target contains guess[i].ipa with remaining count > 0:
+      mark result[i] = "present"
+      decrement available count for guess[i].ipa
+    Else:
+      mark result[i] = "absent"
+```
+
+**Compound Phonemes as Atomic Units**: Complex IPA sounds like affricates (`/tʃ/`, `/dʒ/`) and diphthongs (`/æɪ/`, `/ɑe/`, `/əʉ/`) are treated as atomic single tokens, not individual letters. Entering `/tʃ/` counts as exactly one phoneme cell.
+
+### Word Search Grid Generation
+
+The Word Search generator (`lib/word-search.ts`) generates solvable grids deterministically:
+
+1. **Length-Descending Heuristic**: Input words are sorted from longest to shortest before placement. Longer words possess fewer valid placement coordinates and are locked in first to minimize backtracking failures.
+2. **Ray Vector Directions**: Words can be placed in four primary directional vectors:
+   - Horizontal (`H`: $[0, 1]$)
+   - Vertical (`V`: $[1, 0]$)
+   - Diagonal Down-Right (`DR`: $[1, 1]$)
+   - Diagonal Down-Left (`DL`: $[1, -1]$)
+3. **Collision Checking**: Candidate placements check that overlapping cells either contain `null` or an identical phoneme symbol (`existing.ipa === phoneme.ipa`).
+4. **Deterministic PRNG**: Uses the `mulberry32` pseudo-random number generator seeded with a consistent seed (`DEFAULT_WORD_SEARCH_SEED = 42`). This ensures that the React live preview and the downloaded HTML export generate **identical puzzle boards**.
+5. **Filler Distribution**: Empty cells are populated with randomized phoneme symbols sampled from the active vocabulary and filler inventory.
+
+### Straight-Line Contiguous Selection Geometry
+
+To enforce strict straight-line paths across mouse drag and keyboard interactions:
+
+- **Axis and Diagonal Invariants**: A line between start cell $(r_1, c_1)$ and end cell $(r_2, c_2)$ is valid if and only if:
+  $$\Delta r = 0 \quad \text{or} \quad \Delta c = 0 \quad \text{or} \quad |\Delta r| = |\Delta c|$$
+- **Segment Interpolation (`cellsAlongSegment`)**: Returns an ordered array of cell coordinates from start to end.
+- **Bidirectional Matching**: A selection matches if it equals the word's placed coordinates forwards _or_ backwards (allowing reverse selection from end to start).
+- **Transient Error Feedback**: Invalid or off-axis selections flash a red warning highlight (`data-invalid="true"`) for 350ms before automatically resetting.
+
+### Custom Phoneme Parsing & Canonicalization
+
+In addition to the 90 fixed HCE corpus entries, teachers can define arbitrary custom words for both games:
+
+- **Flexible Token Formats**: Accepts slash-delimited (`/k/ /æ/ /t/`), space-delimited (`k æ t`), or comma-delimited (`k, æ, t`) input.
+- **Typo & Digraph Canonicalization**:
+  - Automatically maps common Latin typos to canonical IPA: `g` $\rightarrow$ `ɡ` (U+0261), `r` $\rightarrow$ `ɹ` (U+0279).
+  - Normalizes English digraphs: `th` $\rightarrow$ `θ`, `sh` $\rightarrow$ `ʃ`, `ch` $\rightarrow$ `tʃ`, `ee` $\rightarrow$ `iː`, `oo` $\rightarrow$ `ʉː`, `ar` $\rightarrow$ `ɐː`, `er` $\rightarrow$ `ɜː`, `or` $\rightarrow$ `oː`, `ng` $\rightarrow$ `ŋ`.
+- **Arbitrary Phoneme Fallback**: If a teacher enters an IPA symbol outside the 43 HCE keys (e.g. `/x/`, `/q/`, `/ʔ/`), the system constructs a valid `Phoneme` object with synthesized graphemes and cues, and dynamically renders extra keyboard rows in the Wordle export.
+- **Click Palette**: The `PhonemePickerPalette` component categorizes sounds into Consonants (Stops, Nasals, Fricatives, Affricates, Glides) and Vowels (Short, Long, Diphthongs) for one-click insertion.
+
+## Standalone HTML Export Architecture
+
+Both activities compile to a single, self-contained `.html` file (`phoneme-wordle.html` and `phoneme-word-search.html`) ready for student distribution:
+
+- **Zero External Dependencies**: Contains all required CSS styles, layout definitions, SVG/Unicode icons, and JavaScript runtime logic inline. Works completely offline.
+- **Safe Data Serialization (`toJson`)**: Prevents script-injection and XSS vulnerabilities by escaping `<` to `\u003c`, and escaping Unicode line/paragraph separators (`\u2028`, `\u2029`).
+- **Complete Behavioral Parity**: The exported standalone HTML matches the live React preview in keyboard navigation, sound cues, visual feedback, hover hints, and victory conditions.
+
+## Design Decisions & Technical Trade-offs
+
+| Decision                   | Selected Approach                          | Alternative Considered                  | Rationale & Trade-off                                                                                                                                                                                                                       |
+| :------------------------- | :----------------------------------------- | :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Preference Storage**     | HTTP Cookies with Server Actions           | `localStorage`                          | Cookies allow Next.js server components to read preferences on initial request, rendering the exact theme, text size, and density without client-side flash of unstyled content (FOUC).                                                     |
+| **HTML Export Runtime**    | Handcrafted Vanilla JS Engine              | Inlined React/ReactDOM Bundle           | Inlining React would bloat the standalone export to several megabytes and introduce bundle evaluation delays. Vanilla JS keeps exported HTML files under 40 KB while maintaining instant loading on low-end classroom devices.              |
+| **Word Input Mode**        | Dual-Mode: HCE Corpus + Custom Input       | Fixed Corpus Only or Pure Freeform Text | Preserves strict cohort compliance with the approved 90-word HCE phoneme corpus while granting speech pathology teachers freedom to test clinical targets (e.g., patient-specific speech sound disorders).                                  |
+| **Wordle Key Layout**      | Fixed 12-Row HCE Keyboard + Dynamic Extras | Standard QWERTY / Alphabetical Keyboard | Standard keyboards arrange letters orthographically. The HCE layout arranges phonemes by acoustic and articulation categories (stops, fricatives, vowels), which is standard clinical practice in speech pathology.                         |
+| **Accessibility Feedback** | Color + Pattern + Accessible Text          | Color Only                              | Wordle tile feedback uses diagonal stripes for "present", solid fills for "correct", and strikethroughs for "absent" so colour-blind students have full visual clarity. Screen reader `aria-live` polite regions report evaluation results. |

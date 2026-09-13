@@ -17,12 +17,12 @@ export function WordleActivityPreview({
   maxAttempts,
   showHints,
 }: {
-  target: PhonemeWord;
+  target: PhonemeWord | null;
   inventory: Phoneme[];
   maxAttempts: number;
   showHints: boolean;
 }) {
-  const gameKey = `${activitySignature([target])}|${maxAttempts}`;
+  const gameKey = target ? `${activitySignature([target])}|${maxAttempts}` : "empty";
 
   return (
     <ActivityPreviewShell
@@ -35,7 +35,7 @@ export function WordleActivityPreview({
         </>
       }
     >
-      {target.phonemes.length > 0 && target.english.trim() ? (
+      {target && target.phonemes.length > 0 && target.english.trim() ? (
         <WordleGame
           key={gameKey}
           target={target}
@@ -45,7 +45,7 @@ export function WordleActivityPreview({
         />
       ) : (
         <p className="rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
-          Select a corpus word to preview the activity.
+          Select a corpus word or enter a valid custom word to preview the activity.
         </p>
       )}
     </ActivityPreviewShell>
