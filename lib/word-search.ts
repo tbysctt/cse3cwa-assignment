@@ -259,7 +259,12 @@ export function generateWordSearch(
     placements.push({ word, ...chosen });
   }
 
-  const fillers = allFillerPhonemes();
+  const fillersMap = new Map<string, Phoneme>();
+  for (const p of allFillerPhonemes()) fillersMap.set(p.ipa, p);
+  for (const w of words) {
+    for (const p of w.phonemes) fillersMap.set(p.ipa, p);
+  }
+  const fillers = [...fillersMap.values()];
   for (let r = 0; r < size; r += 1) {
     for (let c = 0; c < size; c += 1) {
       if (!grid[r][c]) {
