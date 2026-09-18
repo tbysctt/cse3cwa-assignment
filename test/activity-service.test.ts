@@ -1,0 +1,149 @@
+import { describe, expect, it } from "vitest";
+import type { ActivityConfiguration } from "@/dal";
+import {
+  buildHtmlFromActivity,
+  buildWordleCreateInput,
+  buildWordSearchCreateInput,
+  inventoryForTarget,
+  storedWordToPhonemeWord,
+  wordToInput,
+} from "@/lib/activity-service";
+import { DEFAULT_WORD_SEARCH_SEED } from "@/lib/word-search";
+
+const thinPhonemes = [
+  { ipa: "θ", grapheme: "TH", example: "as in thin" },
+  { ipa: "ɪ", grapheme: "I", example: "as in thin" },
+  { ipa: "n", grapheme: "N", example: "as in thin" },
+];
+
+const thinWord = {
+  id: "thin",
+  english: "thin",
+  phonemes: thinPhonemes,
+};
+
+describe("activity-service", () => {
+  it("maps phoneme words to DAL create payloads", () => {
+    expect(wordToInput(thinWord)).toEqual({
+      english: "thin",
+      phonemes: thinPhonemes,
+    });
+
+    expect(
+      buildWordleCreateInput({
+        name: "Thin practice",
+        difficulty: "medium",
+        showHints: true,
+        maxAttempts: 6,
+        target: thinWord,
+      }),
+    ).toMatchObject({
+      activityType: "wordle",
+      maxAttempts: 6,
+      words: [{ english: "thin" }],
+    });
+
+    expect(
+      buildWordSearchCreateInput({
+        name: "Five words",
+        difficulty: "easy",
+        showHints: true,
+        words: [thinWord, thinWord, thinWord, thinWord, thinWord],
+      }).seed,
+    ).toBe(DEFAULT_WORD_SEARCH_SEED);
+  });
+
+  it("maps stored words back to PhonemeWord and extends inventory", () => {
+    const mapped = storedWordToPhonemeWord({
+      id: "db-1",
+      english: "thin",
+      phonemes: thinPhonemes,
+    });
+    expect(mapped.id).toBe("db-1");
+    expect(inventoryForTarget(mapped).some((p) => p.ipa === "θ")).toBe(true);
+  });
+
+  it("builds Wordle HTML from a stored activity", () => {
+    const activity: ActivityConfiguration = {
+      id: "a1",
+      name: "Thin",
+      activityType: "wordle",
+      difficulty: "medium",
+      showHints: true,
+      maxAttempts: 6,
+      seed: null,
+      words: [{ id: "w1", english: "thin", phonemes: thinPhonemes }],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const file = buildHtmlFromActivity(activity);
+    expect(file.filename).toBe("phoneme-wordle.html");
+    expect(file.html).toContain("<!DOCTYPE html>");
+    expect(file.html).toContain("thin");
+  });
+
+  it("builds Word Search HTML from a stored activity", () => {
+    const corpus = [
+      {
+        english: "thin",
+        phonemes: [
+          { ipa: "θ", grapheme: "TH", example: "as in thin" },
+          { ipa: "ɪ", grapheme: "I", example: "as in thin" },
+          { ipa: "n", grapheme: "N", example: "as in thin" },
+        ],
+      },
+      {
+        english: "ship",
+        phonemes: [
+          { ipa: "ʃ", grapheme: "SH", example: "as in ship" },
+          { ipa: "ɪ", grapheme: "I", example: "as in ship" },
+          { ipa: "p", grapheme: "P", example: "as in ship" },
+        ],
+      },
+      {
+        english: "chin",
+        phonemes: [
+          { ipa: "tʃ", grapheme: "CH", example: "as in chin" },
+          { ipa: "ɪ", grapheme: "I", example: "as in chin" },
+          { ipa: "n", grapheme: "N", example: "as in chin" },
+        ],
+      },
+      {
+        english: "fan",
+        phonemes: [
+          { ipa: "f", grapheme: "F", example: "as in fan" },
+          { ipa: "æ", grapheme: "A", example: "as in fan" },
+          { ipa: "n", grapheme: "N", example: "as in fan" },
+        ],
+      },
+      {
+        english: "bank",
+        phonemes: [
+          { ipa: "b", grapheme: "B", example: "as in bank" },
+          { ipa: "æ", grapheme: "A", example: "as in bank" },
+          { ipa: "ŋ", grapheme: "NG", example: "as in bank" },
+          { ipa: "k", grapheme: "K", example: "as in bank" },
+        ],
+      },
+    ];
+
+    const activity: ActivityConfiguration = {
+      id: "a2",
+      name: "Search",
+      activityType: "word_search",
+      difficulty: "medium",
+      showHints: true,
+      maxAttempts: null,
+      seed: 42,
+      words: corpus.map((word, index) => ({ id: `w${index}`, ...word })),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const file = buildHtmlFromActivity(activity);
+    expect(file.filename).toBe("phoneme-word-search.html");
+    expect(file.html).toContain("<!DOCTYPE html>");
+    expect(file.html).toContain("thin");
+  });
+});

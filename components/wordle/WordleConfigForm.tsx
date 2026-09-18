@@ -46,6 +46,7 @@ export function WordleConfigForm({
   difficulty,
   onDifficultyChange,
   canGenerate,
+  generateHint,
   onGenerate,
 }: {
   mode?: "corpus" | "custom";
@@ -63,6 +64,7 @@ export function WordleConfigForm({
   difficulty: Difficulty;
   onDifficultyChange: (next: Difficulty) => void;
   canGenerate: boolean;
+  generateHint?: string;
   onGenerate: () => void;
 }) {
   const [internalMode, setInternalMode] = useState<"corpus" | "custom">(mode);
@@ -380,9 +382,10 @@ export function WordleConfigForm({
             onClick={onGenerate}
             disabled={!canGenerate}
             title={
-              canGenerate
+              generateHint ??
+              (canGenerate
                 ? "Download the activity as a standalone HTML file"
-                : "Configure a valid target word first"
+                : "Configure a valid target word first")
             }
           >
             Generate HTML

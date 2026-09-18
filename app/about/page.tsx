@@ -25,10 +25,11 @@ export default function AboutPage() {
           for use in any normal browser — including offline classroom machines.
         </p>
         <p className="leading-relaxed text-foreground/90">
-          <strong>Assessment 1 is frontend only.</strong> There is no database,
-          authentication, or dynamic word-list management. Those features are
-          planned for later assessments so the builder can rotate through many
-          phoneme words with richer generation options.
+          <strong>Assessment 2 adds database persistence.</strong> Teachers can
+          save, load, update, and delete named Wordle and Word Search
+          configurations in PostgreSQL — including phoneme-based word lists and
+          activity settings — then generate downloadable HTML from that stored
+          data rather than only temporary frontend values.
         </p>
       </section>
 

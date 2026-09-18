@@ -11,6 +11,15 @@ vi.mock("@/lib/download", () => ({
   downloadTextFile: vi.fn(),
 }));
 
+vi.mock("@/app/actions/activities", () => ({
+  listActivitiesAction: vi.fn(async () => ({ ok: true, data: [] })),
+  getActivityAction: vi.fn(),
+  createActivityAction: vi.fn(),
+  updateActivityAction: vi.fn(),
+  deleteActivityAction: vi.fn(),
+  generateStoredActivityHtmlAction: vi.fn(),
+}));
+
 describe("activity builders", () => {
   beforeEach(() => {
     vi.mocked(downloadTextFile).mockClear();
@@ -69,7 +78,8 @@ describe("activity builders", () => {
         screen.getByRole("combobox", { name: `Word ${index + 1}` }),
       ).toHaveValue(word.id);
     }
-    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Activity name" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /phonemes/i })).not.toBeInTheDocument();
     expect(screen.getByText(/9×9 grid, hints on/i)).toBeInTheDocument();
 
     await user.selectOptions(

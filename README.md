@@ -5,7 +5,7 @@ A specialised activity builder designed for Speech Pathology educators and stude
 This is a three-stage assignment for CSE3CWA:
 
 1. **Frontend Design and Usability (Part 1)**: A clear, accessible, and responsive builder interface supporting phoneme symbol gameplay, live interactive previews, customizable preferences, and zero-dependency standalone HTML exports.
-2. **Full-Stack Cloud Application Implementation (Part 2)**: Introduces database-driven word management, API services, and user authentication.
+2. **Full-Stack Cloud Application Implementation (Part 2)**: Database-driven activity and word-list management via Drizzle/PostgreSQL, server actions, and HTML generation from stored configurations.
 3. **Data-Driven Web Application and Reporting (Part 3)**: Extends the platform to store student performance data, process activity telemetry, and present clinical learning analytics.
 
 > [!NOTE]
@@ -35,6 +35,32 @@ npm run lint
 # Compile production build
 npm run build
 ```
+
+## Activity persistence (Assessment 2)
+
+Named Wordle and Word Search configurations (word lists, phonemes, difficulty, hints, and related settings) are stored in **PostgreSQL** through a **Drizzle DAL** (`dal/`). The builders talk to the database via Next.js **server actions** (`app/actions/activities.ts`); business logic in `lib/activity-service.ts` maps stored rows into HTML exports. Drizzle is only used inside `dal/`.
+
+### Local database
+
+```sh
+# Start Postgres (Compose)
+docker compose up -d db
+
+# Copy env and apply migrations
+cp .env.example .env.local
+npm run db:migrate
+
+# Or apply with the runtime migrator used in Docker
+node scripts/migrate.mjs
+
+npm run dev
+```
+
+`DATABASE_URL` defaults are in `.env.example` and match `compose.yaml`.
+
+### Docker
+
+`docker compose up --build` starts Postgres and the Next.js app. The container entrypoint runs `scripts/migrate.mjs` before `node server.js` so the schema is applied automatically.
 
 ## Persistent Interface Preferences
 

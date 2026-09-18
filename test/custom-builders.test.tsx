@@ -9,6 +9,15 @@ vi.mock("@/lib/download", () => ({
   downloadTextFile: vi.fn(),
 }));
 
+vi.mock("@/app/actions/activities", () => ({
+  listActivitiesAction: vi.fn(async () => ({ ok: true, data: [] })),
+  getActivityAction: vi.fn(),
+  createActivityAction: vi.fn(),
+  updateActivityAction: vi.fn(),
+  deleteActivityAction: vi.fn(),
+  generateStoredActivityHtmlAction: vi.fn(),
+}));
+
 describe("Custom input builder flows", () => {
   beforeEach(() => {
     vi.mocked(downloadTextFile).mockClear();

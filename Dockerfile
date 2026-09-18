@@ -24,8 +24,17 @@ COPY --from=builder --chown=node:node /app/public ./public
 COPY --from=builder --chown=node:node /app/.next/standalone ./
 COPY --from=builder --chown=node:node /app/.next/static ./.next/static
 
+# Migrations run before the server starts (drizzle-orm migrator).
+COPY --from=builder --chown=node:node /app/drizzle ./drizzle
+COPY --from=builder --chown=node:node /app/scripts/migrate.mjs ./scripts/migrate.mjs
+COPY --from=builder --chown=node:node /app/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
+COPY --from=builder --chown=node:node /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --from=builder --chown=node:node /app/node_modules/postgres ./node_modules/postgres
+
+RUN chmod +x ./scripts/docker-entrypoint.sh
+
 USER node
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["./scripts/docker-entrypoint.sh"]
