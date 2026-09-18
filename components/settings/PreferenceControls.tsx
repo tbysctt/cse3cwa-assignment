@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  setDensity,
-  setTextSize,
-  setTheme,
-} from "@/app/actions/preferences";
+import { setDensity, setTextSize, setTheme } from "@/app/actions/preferences";
 import {
   DENSITIES,
   TEXT_SIZES,
@@ -60,8 +56,8 @@ export function PreferenceControls({
           Colour theme
         </legend>
         <p className="text-sm text-absent">
-          Stored in a cookie and applied across the whole site. &ldquo;System&rdquo;
-          follows your operating system preference.
+          Stored in a cookie and applied across the whole site.
+          &ldquo;System&rdquo; follows your operating system preference.
         </p>
         <div className="flex flex-wrap gap-3">
           {(["light", "dark", "system"] as const).map((value) => (
@@ -80,7 +76,10 @@ export function PreferenceControls({
       </fieldset>
 
       {/* Text Size / Accessibility */}
-      <fieldset disabled={pending} className="space-y-3 border-t border-border pt-6">
+      <fieldset
+        disabled={pending}
+        className="space-y-3 border-t border-border pt-6"
+      >
         <legend className="text-base font-semibold text-foreground">
           Text size &amp; readability
         </legend>
@@ -108,12 +107,16 @@ export function PreferenceControls({
       </fieldset>
 
       {/* Interface Density */}
-      <fieldset disabled={pending} className="space-y-3 border-t border-border pt-6">
+      <fieldset
+        disabled={pending}
+        className="space-y-3 border-t border-border pt-6"
+      >
         <legend className="text-base font-semibold text-foreground">
           Layout density
         </legend>
         <p className="text-sm text-absent">
-          Stored in a cookie. Adjusts surface padding, section margins, and control heights.
+          Stored in a cookie. Adjusts surface padding, section margins, and
+          control heights.
         </p>
         <div className="flex flex-wrap gap-3">
           {DENSITIES.map(({ value, label }) => (
