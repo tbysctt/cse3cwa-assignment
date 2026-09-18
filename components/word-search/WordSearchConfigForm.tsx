@@ -67,7 +67,9 @@ export function WordSearchConfigForm({
   const [internalMode, setInternalMode] = useState<"corpus" | "custom">(mode);
   const activeMode = onModeChange ? mode : internalMode;
 
-  const [slotTextInputs, setSlotTextInputs] = useState<Record<number, string>>({});
+  const [slotTextInputs, setSlotTextInputs] = useState<Record<number, string>>(
+    {},
+  );
 
   const preset = DIFFICULTY_PRESETS[difficulty];
   const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
@@ -89,11 +91,16 @@ export function WordSearchConfigForm({
     }
   }
 
-  function handleRemovePhonemeFromSlot(slotIndex: number, phonemeIndex: number) {
+  function handleRemovePhonemeFromSlot(
+    slotIndex: number,
+    phonemeIndex: number,
+  ) {
     if (!onCustomEntryChange) return;
     const currentEntry = customEntries[slotIndex];
     if (!currentEntry) return;
-    const nextPhonemes = currentEntry.phonemes.filter((_, i) => i !== phonemeIndex);
+    const nextPhonemes = currentEntry.phonemes.filter(
+      (_, i) => i !== phonemeIndex,
+    );
     onCustomEntryChange(slotIndex, { ...currentEntry, phonemes: nextPhonemes });
     setSlotTextInputs((prev) => ({
       ...prev,
@@ -112,7 +119,11 @@ export function WordSearchConfigForm({
           <label className="text-xs font-semibold uppercase tracking-wide text-absent">
             Word source
           </label>
-          <div className="flex gap-2" role="group" aria-label="Word search source">
+          <div
+            className="flex gap-2"
+            role="group"
+            aria-label="Word search source"
+          >
             <button
               type="button"
               className={[
@@ -149,9 +160,13 @@ export function WordSearchConfigForm({
               Corpus words
             </legend>
             <p className="mt-0.5 text-xs text-absent">
-              Choose five words from the HCE list. Each word can only be used once.
+              Choose five words from the HCE list. Each word can only be used
+              once.
             </p>
-            <ol className="mt-3 space-y-3" aria-label="Word search corpus picks">
+            <ol
+              className="mt-3 space-y-3"
+              aria-label="Word search corpus picks"
+            >
               {wordIds.map((wordId, index) => {
                 const selected =
                   words.find((word) => word.id === wordId) ??
@@ -202,7 +217,8 @@ export function WordSearchConfigForm({
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-absent">
-                Enter five custom phoneme words (max {gridSize} phonemes each for {gridSize}×{gridSize} grid).
+                Enter five custom phoneme words (max {gridSize} phonemes each
+                for {gridSize}×{gridSize} grid).
               </p>
               {onLoadSampleWords ? (
                 <button
@@ -227,7 +243,7 @@ export function WordSearchConfigForm({
                   <li
                     key={`custom-slot-${index}`}
                     className={[
-                      "rounded-[var(--control-radius)] border p-3 transition-colors",
+                      "rounded-(--control-radius) border p-3 transition-colors",
                       isActive
                         ? "border-accent bg-accent/5 ring-1 ring-accent"
                         : "border-border bg-background",
@@ -334,7 +350,7 @@ export function WordSearchConfigForm({
             </ol>
 
             {customError ? (
-              <p className="rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-semibold text-danger">
+              <p className="rounded-(--control-radius) border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-semibold text-danger">
                 {customError}
               </p>
             ) : null}

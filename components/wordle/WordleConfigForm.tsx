@@ -12,10 +12,7 @@ import {
   type PhonemeWord,
 } from "@/data/phonemes";
 import { PHONEME_LENGTHS } from "@/data/hce-corpus";
-import {
-  DIFFICULTY_OPTIONS,
-  type Difficulty,
-} from "@/lib/activity";
+import { DIFFICULTY_OPTIONS, type Difficulty } from "@/lib/activity";
 import {
   formatPhonemeSequence,
   parsePhonemeSequence,
@@ -110,7 +107,10 @@ export function WordleConfigForm({
     setPhonemeText(formatPhonemeSequence(nextPhonemes));
   }
 
-  function handleLoadPreset(presetItem: { english: string; rawPhonemes: string }) {
+  function handleLoadPreset(presetItem: {
+    english: string;
+    rawPhonemes: string;
+  }) {
     if (onCustomEnglishChange) onCustomEnglishChange(presetItem.english);
     if (onCustomPhonemesChange) {
       const parsed = parsePhonemeSequence(presetItem.rawPhonemes);
@@ -174,7 +174,9 @@ export function WordleConfigForm({
                     className={inputClass}
                     value={length}
                     onChange={(event) =>
-                      onLengthChange(Number(event.target.value) as PhonemeLength)
+                      onLengthChange(
+                        Number(event.target.value) as PhonemeLength,
+                      )
                     }
                   >
                     {PHONEME_LENGTHS.map((value) => (
@@ -208,7 +210,7 @@ export function WordleConfigForm({
             </div>
 
             {selected ? (
-              <div className="rounded-[var(--control-radius)] border border-border bg-surface-muted px-3 py-2 text-sm">
+              <div className="rounded-(--control-radius) border border-border bg-surface-muted px-3 py-2 text-sm">
                 <p className="font-semibold text-foreground">
                   Target: {phonemeWordDisplay(selected)}
                 </p>
@@ -251,9 +253,7 @@ export function WordleConfigForm({
                     className={inputClass}
                     placeholder="e.g. cat"
                     value={customEnglish}
-                    onChange={(e) =>
-                      onCustomEnglishChange?.(e.target.value)
-                    }
+                    onChange={(e) => onCustomEnglishChange?.(e.target.value)}
                   />
                 )}
               </Field>
@@ -276,7 +276,7 @@ export function WordleConfigForm({
             </div>
 
             {/* Custom Phonemes Chip Sequence */}
-            <div className="rounded-[var(--control-radius)] border border-border bg-surface-muted p-3">
+            <div className="rounded-(--control-radius) border border-border bg-surface-muted p-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide text-absent">
                   Target Phonemes ({customPhonemes.length})
@@ -296,11 +296,14 @@ export function WordleConfigForm({
               </div>
 
               {customPhonemes.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Selected custom phonemes">
+                <div
+                  className="mt-2 flex flex-wrap gap-1.5"
+                  aria-label="Selected custom phonemes"
+                >
                   {customPhonemes.map((phoneme, index) => (
                     <span
                       key={`${index}-${phoneme.ipa}`}
-                      className="inline-flex items-center gap-1.5 rounded-[var(--control-radius)] border border-border bg-surface px-2.5 py-1 font-mono text-sm font-semibold text-foreground shadow-xs"
+                      className="inline-flex items-center gap-1.5 rounded-(--control-radius) border border-border bg-surface px-2.5 py-1 font-mono text-sm font-semibold text-foreground shadow-xs"
                     >
                       <span>{formatIpa(phoneme.ipa)}</span>
                       <span className="text-[0.65rem] font-sans font-normal text-absent">
@@ -319,19 +322,22 @@ export function WordleConfigForm({
                 </div>
               ) : (
                 <p className="mt-2 text-xs italic text-absent">
-                  No phonemes entered yet. Type above or click a phoneme in the palette below.
+                  No phonemes entered yet. Type above or click a phoneme in the
+                  palette below.
                 </p>
               )}
 
               {customEnglish && customPhonemes.length > 0 ? (
                 <p className="mt-2 text-xs text-foreground">
-                  <strong>Preview:</strong> {customPhonemes.map((p) => formatIpa(p.ipa)).join(" ")} = &ldquo;{customEnglish}&rdquo;
+                  <strong>Preview:</strong>{" "}
+                  {customPhonemes.map((p) => formatIpa(p.ipa)).join(" ")} =
+                  &ldquo;{customEnglish}&rdquo;
                 </p>
               ) : null}
             </div>
 
             {customError ? (
-              <p className="rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-semibold text-danger">
+              <p className="rounded-(--control-radius) border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-semibold text-danger">
                 {customError}
               </p>
             ) : null}
@@ -383,7 +389,9 @@ export function WordleConfigForm({
           </button>
           <p className="mt-2 text-xs text-absent">
             Downloads a self-contained, playable{" "}
-            <code className="rounded bg-surface-muted px-1">phoneme-wordle.html</code>{" "}
+            <code className="rounded bg-surface-muted px-1">
+              phoneme-wordle.html
+            </code>{" "}
             file that runs in any browser.
           </p>
         </div>

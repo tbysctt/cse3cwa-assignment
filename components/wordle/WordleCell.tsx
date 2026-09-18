@@ -23,7 +23,7 @@ export function WordleCell({
       role="gridcell"
       aria-label={label}
       className={[
-        "flex min-h-12 flex-col items-center justify-center rounded-[var(--control-radius)] border-2 font-mono text-base transition-colors",
+        "flex min-h-12 flex-col items-center justify-center rounded-(--control-radius) border-2 font-mono text-base transition-colors",
         tileStatusClass(status),
       ].join(" ")}
     >

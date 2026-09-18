@@ -186,173 +186,177 @@ export function WordSearchGame({
   return (
     <div>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start">
-      <div className="min-w-0">
-        <ul
-          className="mb-3 space-y-1 text-xs text-absent"
-          aria-label="How to select phonemes"
-        >
-          <li>
-            <strong className="font-semibold text-foreground">Mouse or touch:</strong>{" "}
-            drag across a straight horizontal, vertical, or diagonal line of
-            phonemes.
-          </li>
-          <li>
-            <strong className="font-semibold text-foreground">Keyboard:</strong>{" "}
-            Tab to a cell, press Enter or Space to set the start, move to the end
-            cell, then press Enter or Space again.
-          </li>
-        </ul>
-        <div className="overflow-x-auto pb-1">
-        <div
-          className="grid gap-1.5"
-          style={{
-            gridTemplateColumns: `repeat(${puzzle.size}, minmax(2rem, 1fr))`,
-            minWidth: `${puzzle.size * 2.5}rem`,
-          }}
-        >
-          {puzzle.grid.map((row, rowIndex) =>
-            row.map((cell, colIndex) => {
-              const key = cellKey(rowIndex, colIndex);
-              const isSelected = selected.includes(key);
-              const isInvalid = invalidKeys.includes(key);
-              const isFound = foundCells.has(key);
-              const phoneme: Phoneme | null = cell;
-              const hint = phoneme
-                ? `${formatIpa(phoneme.ipa)} → ${phoneme.grapheme} (${phoneme.example})`
-                : "";
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  data-key={key}
-                  data-invalid={isInvalid ? "true" : undefined}
-                  className={[
-                    "relative flex min-h-12 flex-col items-center justify-center rounded-[var(--control-radius)] border font-mono text-sm transition-colors",
-                    isFound
-                      ? "border-correct bg-correct/20"
-                      : isInvalid
-                        ? "border-danger bg-danger/25 shadow-[inset_0_0_0_2px_var(--danger)] animate-pulse"
-                        : isSelected
-                          ? "border-accent bg-accent/20 shadow-[inset_0_0_0_2px_var(--accent)]"
-                          : "border-border bg-background hover:bg-surface-muted",
-                    "touch-none",
-                  ].join(" ")}
-                  aria-pressed={isSelected || isInvalid}
-                  aria-label={[
-                    showHints && hint
-                      ? hint
-                      : phoneme
-                        ? formatIpa(phoneme.ipa)
-                        : "",
-                    isFound ? "found" : "",
-                    isInvalid ? "not a match" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(", ")}
-                  title={showHints && hint ? hint : undefined}
-                  onPointerDown={(event) => {
-                    if (event.button !== 0) return;
-                    event.preventDefault();
-                    clearInvalidFeedback();
-                    pointerIntentRef.current = true;
-                    draggingRef.current = true;
-                    anchorRef.current = key;
-                    setSelectedKeys([key]);
-                  }}
-                  onPointerEnter={() => {
-                    if (!draggingRef.current) return;
-                    selectSegmentTo(key);
-                  }}
-                  onClick={(event) => {
-                    // Mouse and touch selection is drag-only; only keyboard
-                    // activation (detail 0) drives the click workflow.
-                    if (pointerIntentRef.current) {
-                      pointerIntentRef.current = false;
-                      return;
-                    }
-                    if (event.detail !== 0) return;
-                    activateWithKeyboard(key);
-                  }}
-                >
-                  <span aria-hidden="true">
-                    {phoneme ? formatIpa(phoneme.ipa) : ""}
-                  </span>
-                  {showHints ? (
-                    <span className="text-[0.65rem] font-sans font-semibold uppercase tracking-wide text-absent">
-                      {phoneme?.grapheme}
-                    </span>
-                  ) : null}
-                  {isFound ? (
-                    <span
-                      aria-hidden="true"
-                      className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-correct text-[0.6rem] font-bold text-white"
+        <div className="min-w-0">
+          <ul
+            className="mb-3 space-y-1 text-xs text-absent"
+            aria-label="How to select phonemes"
+          >
+            <li>
+              <strong className="font-semibold text-foreground">
+                Mouse or touch:
+              </strong>{" "}
+              drag across a straight horizontal, vertical, or diagonal line of
+              phonemes.
+            </li>
+            <li>
+              <strong className="font-semibold text-foreground">
+                Keyboard:
+              </strong>{" "}
+              Tab to a cell, press Enter or Space to set the start, move to the
+              end cell, then press Enter or Space again.
+            </li>
+          </ul>
+          <div className="overflow-x-auto pb-1">
+            <div
+              className="grid gap-1.5"
+              style={{
+                gridTemplateColumns: `repeat(${puzzle.size}, minmax(2rem, 1fr))`,
+                minWidth: `${puzzle.size * 2.5}rem`,
+              }}
+            >
+              {puzzle.grid.map((row, rowIndex) =>
+                row.map((cell, colIndex) => {
+                  const key = cellKey(rowIndex, colIndex);
+                  const isSelected = selected.includes(key);
+                  const isInvalid = invalidKeys.includes(key);
+                  const isFound = foundCells.has(key);
+                  const phoneme: Phoneme | null = cell;
+                  const hint = phoneme
+                    ? `${formatIpa(phoneme.ipa)} → ${phoneme.grapheme} (${phoneme.example})`
+                    : "";
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      data-key={key}
+                      data-invalid={isInvalid ? "true" : undefined}
+                      className={[
+                        "relative flex min-h-12 flex-col items-center justify-center rounded-(--control-radius) border font-mono text-sm transition-colors",
+                        isFound
+                          ? "border-correct bg-correct/20"
+                          : isInvalid
+                            ? "border-danger bg-danger/25 shadow-[inset_0_0_0_2px_var(--danger)] animate-pulse"
+                            : isSelected
+                              ? "border-accent bg-accent/20 shadow-[inset_0_0_0_2px_var(--accent)]"
+                              : "border-border bg-background hover:bg-surface-muted",
+                        "touch-none",
+                      ].join(" ")}
+                      aria-pressed={isSelected || isInvalid}
+                      aria-label={[
+                        showHints && hint
+                          ? hint
+                          : phoneme
+                            ? formatIpa(phoneme.ipa)
+                            : "",
+                        isFound ? "found" : "",
+                        isInvalid ? "not a match" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(", ")}
+                      title={showHints && hint ? hint : undefined}
+                      onPointerDown={(event) => {
+                        if (event.button !== 0) return;
+                        event.preventDefault();
+                        clearInvalidFeedback();
+                        pointerIntentRef.current = true;
+                        draggingRef.current = true;
+                        anchorRef.current = key;
+                        setSelectedKeys([key]);
+                      }}
+                      onPointerEnter={() => {
+                        if (!draggingRef.current) return;
+                        selectSegmentTo(key);
+                      }}
+                      onClick={(event) => {
+                        // Mouse and touch selection is drag-only; only keyboard
+                        // activation (detail 0) drives the click workflow.
+                        if (pointerIntentRef.current) {
+                          pointerIntentRef.current = false;
+                          return;
+                        }
+                        if (event.detail !== 0) return;
+                        activateWithKeyboard(key);
+                      }}
                     >
-                      ✓
-                    </span>
-                  ) : null}
-                </button>
-              );
-            }),
-          )}
+                      <span aria-hidden="true">
+                        {phoneme ? formatIpa(phoneme.ipa) : ""}
+                      </span>
+                      {showHints ? (
+                        <span className="text-[0.65rem] font-sans font-semibold uppercase tracking-wide text-absent">
+                          {phoneme?.grapheme}
+                        </span>
+                      ) : null}
+                      {isFound ? (
+                        <span
+                          aria-hidden="true"
+                          className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-correct text-[0.6rem] font-bold text-white"
+                        >
+                          ✓
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                }),
+              )}
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="ui-button ui-button-secondary px-4 py-2"
+              onClick={clearSelection}
+            >
+              Clear selection
+            </button>
+            <button
+              type="button"
+              className="ui-button ui-button-secondary px-4 py-2"
+              onClick={reset}
+            >
+              Reset activity
+            </button>
+          </div>
         </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="ui-button ui-button-secondary px-4 py-2"
-            onClick={clearSelection}
-          >
-            Clear selection
-          </button>
-          <button
-            type="button"
-            className="ui-button ui-button-secondary px-4 py-2"
-            onClick={reset}
-          >
-            Reset activity
-          </button>
-        </div>
-      </div>
 
-      <aside>
-        <h3 className="text-base font-semibold text-foreground">
-          Find these words
-        </h3>
-        <ul className="mt-3 space-y-2" aria-label="Find these words">
-          {words.map((word) => {
-            const done = foundIds.has(word.id);
-            return (
-              <li
-                key={word.id}
-                className={[
-                  "rounded-[var(--surface-radius)] border border-border p-3",
-                  done ? "border-correct/50 bg-correct/10" : "bg-background",
-                ].join(" ")}
-              >
-                <div className="flex flex-wrap gap-1">
-                  {word.phonemes.map((phoneme, index) => (
-                    <span
-                      key={`${index}-${phoneme.ipa}`}
-                      className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-[var(--control-radius)] border border-border bg-surface px-1.5 font-mono text-sm"
-                    >
-                      {formatIpa(phoneme.ipa)}
-                    </span>
-                  ))}
-                </div>
-                {done ? (
-                  <p className="mt-2 text-sm font-semibold text-correct">
-                    English: {word.english}
-                  </p>
-                ) : (
-                  <p className="mt-2 text-xs text-absent">
-                    {word.phonemes.length} phonemes
-                  </p>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </aside>
+        <aside>
+          <h3 className="text-base font-semibold text-foreground">
+            Find these words
+          </h3>
+          <ul className="mt-3 space-y-2" aria-label="Find these words">
+            {words.map((word) => {
+              const done = foundIds.has(word.id);
+              return (
+                <li
+                  key={word.id}
+                  className={[
+                    "rounded-(--surface-radius) border border-border p-3",
+                    done ? "border-correct/50 bg-correct/10" : "bg-background",
+                  ].join(" ")}
+                >
+                  <div className="flex flex-wrap gap-1">
+                    {word.phonemes.map((phoneme, index) => (
+                      <span
+                        key={`${index}-${phoneme.ipa}`}
+                        className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-(--control-radius) border border-border bg-surface px-1.5 font-mono text-sm"
+                      >
+                        {formatIpa(phoneme.ipa)}
+                      </span>
+                    ))}
+                  </div>
+                  {done ? (
+                    <p className="mt-2 text-sm font-semibold text-correct">
+                      English: {word.english}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-absent">
+                      {word.phonemes.length} phonemes
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </aside>
       </div>
 
       <p
