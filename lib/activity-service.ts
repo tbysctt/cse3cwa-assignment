@@ -9,7 +9,7 @@ import type {
   PhonemeInput,
   StoredWord,
   WordInput,
-} from "@/dal";
+} from "@/dal/types";
 import { generateWordleHtml } from "@/lib/generate-wordle-html";
 import { generateWordSearchHtml } from "@/lib/generate-word-search-html";
 import {
@@ -96,10 +96,11 @@ export function buildHtmlFromActivity(
   activity: ActivityConfiguration,
 ): GeneratedActivityFile {
   if (activity.activityType === "wordle") {
-    const target = storedWordToPhonemeWord(activity.words[0]);
-    if (!target) {
+    const storedTarget = activity.words[0];
+    if (!storedTarget) {
       throw new Error("Stored Wordle activity is missing its target word.");
     }
+    const target = storedWordToPhonemeWord(storedTarget);
     if (activity.maxAttempts == null) {
       throw new Error("Stored Wordle activity is missing maxAttempts.");
     }

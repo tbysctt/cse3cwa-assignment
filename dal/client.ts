@@ -1,26 +1,30 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import * as schema from "./schema";
 
-function createDb() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
+export type AppDatabase = PostgresJsDatabase<typeof schema>;
+
+export function createDb(connectionString?: string): AppDatabase {
+  const url = connectionString ?? process.env.DATABASE_URL;
+  if (!url) {
     throw new Error(
       "DATABASE_URL is not set. Copy .env.example to .env.local and start Postgres.",
     );
   }
 
-  const client = postgres(connectionString);
+  const client = postgres(url, { max: 10 });
   return drizzle(client, { schema });
 }
 
 const globalForDb = globalThis as unknown as {
-  __dalDb?: ReturnType<typeof createDb>;
+  __dalDb?: AppDatabase;
 };
 
-export const db = globalForDb.__dalDb ?? createDb();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.__dalDb = db;
+/** Lazy singleton — does not connect until first call. */
+export function getDb(): AppDatabase {
+  if (!globalForDb.__dalDb) {
+    globalForDb.__dalDb = createDb();
+  }
+  return globalForDb.__dalDb;
 }

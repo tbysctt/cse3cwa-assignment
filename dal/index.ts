@@ -1,18 +1,18 @@
 /**
  * Public data access layer. Business logic should import from here only —
  * do not use Drizzle or `dal/client` outside this folder.
+ *
+ * Client components must use `import type` from `@/dal/types` only.
  */
 
-import { sql } from "drizzle-orm";
-
-import {
+export {
   createActivity,
   deleteActivity,
   getActivity,
   listActivities,
+  ping,
   updateActivity,
 } from "./activities";
-import { db } from "./client";
 
 export type {
   ActivityConfiguration,
@@ -28,17 +28,3 @@ export type {
 } from "./types";
 
 export { DalNotFoundError, DalValidationError } from "./errors";
-
-export {
-  createActivity,
-  deleteActivity,
-  getActivity,
-  listActivities,
-  updateActivity,
-};
-
-/** Smoke-test the database connection. */
-export async function ping(): Promise<boolean> {
-  await db.execute(sql`SELECT 1`);
-  return true;
-}

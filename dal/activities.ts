@@ -1,9 +1,13 @@
-import { asc, count, desc, eq } from "drizzle-orm";
+import { asc, count, desc, eq, sql } from "drizzle-orm";
 
-import { db } from "./client";
+import { getDb, type AppDatabase } from "./client";
 import { DalNotFoundError } from "./errors";
 import { mapActivity, mapActivitySummary } from "./mappers";
-import { activityConfigurations, wordPhonemes, words } from "./schema";
+import {
+  activityConfigurations,
+  wordPhonemes,
+  words,
+} from "./schema";
 import type {
   ActivityConfiguration,
   ActivitySummary,
@@ -18,8 +22,12 @@ import {
   type ValidatedCreateActivity,
 } from "./validation";
 
+type DbTransaction = Parameters<
+  Parameters<AppDatabase["transaction"]>[0]
+>[0];
+
 async function insertWords(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  tx: DbTransaction,
   activityId: string,
   wordInputs: WordInput[],
 ) {
@@ -51,7 +59,27 @@ async function insertWords(
   }
 }
 
-async function loadActivity(id: string): Promise<ActivityConfiguration | null> {
+function toValidatedSnapshot(
+  activity: ActivityConfiguration,
+): ValidatedCreateActivity {
+  return {
+    name: activity.name,
+    activityType: activity.activityType,
+    difficulty: activity.difficulty,
+    showHints: activity.showHints,
+    maxAttempts: activity.maxAttempts,
+    seed: activity.seed,
+    words: activity.words.map(({ english, phonemes }) => ({
+      english,
+      phonemes,
+    })),
+  };
+}
+
+async function loadActivity(
+  id: string,
+): Promise<ActivityConfiguration | null> {
+  const db = getDb();
   const row = await db.query.activityConfigurations.findFirst({
     where: eq(activityConfigurations.id, id),
     with: {
@@ -73,8 +101,9 @@ export async function createActivity(
   input: CreateActivityInput,
 ): Promise<ActivityConfiguration> {
   const validated = validateCreateActivity(input);
+  const db = getDb();
 
-  const created = await db.transaction(async (tx) => {
+  const createdId = await db.transaction(async (tx) => {
     const [activity] = await tx
       .insert(activityConfigurations)
       .values({
@@ -95,7 +124,7 @@ export async function createActivity(
     return activity.id;
   });
 
-  const loaded = await loadActivity(created);
+  const loaded = await loadActivity(createdId);
   if (!loaded) {
     throw new Error("Created activity could not be loaded.");
   }
@@ -111,6 +140,7 @@ export async function getActivity(
 export async function listActivities(
   filter: ListActivitiesFilter = {},
 ): Promise<ActivitySummary[]> {
+  const db = getDb();
   const rows = await db
     .select({
       id: activityConfigurations.id,
@@ -142,23 +172,6 @@ export async function listActivities(
   );
 }
 
-function toValidatedSnapshot(
-  activity: ActivityConfiguration,
-): ValidatedCreateActivity {
-  return {
-    name: activity.name,
-    activityType: activity.activityType,
-    difficulty: activity.difficulty,
-    showHints: activity.showHints,
-    maxAttempts: activity.maxAttempts,
-    seed: activity.seed,
-    words: activity.words.map(({ english, phonemes }) => ({
-      english,
-      phonemes,
-    })),
-  };
-}
-
 export async function updateActivity(
   id: string,
   patch: UpdateActivityInput,
@@ -174,6 +187,7 @@ export async function updateActivity(
     patch,
   );
 
+  const db = getDb();
   await db.transaction(async (tx) => {
     const [updated] = await tx
       .update(activityConfigurations)
@@ -206,6 +220,7 @@ export async function updateActivity(
 }
 
 export async function deleteActivity(id: string): Promise<void> {
+  const db = getDb();
   const deleted = await db
     .delete(activityConfigurations)
     .where(eq(activityConfigurations.id, id))
@@ -214,4 +229,10 @@ export async function deleteActivity(id: string): Promise<void> {
   if (deleted.length === 0) {
     throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
   }
+}
+
+export async function ping(): Promise<boolean> {
+  const db = getDb();
+  await db.execute(sql`SELECT 1`);
+  return true;
 }

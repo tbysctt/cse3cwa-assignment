@@ -58,6 +58,14 @@ npm run dev
 
 `DATABASE_URL` defaults are in `.env.example` and match `compose.yaml`.
 
+DAL CRUD integration tests in `test/activity-repository.test.ts` run only when `DATABASE_URL` is set (they are skipped otherwise). Start Postgres and export the URL before `npm test` to include them:
+
+```sh
+docker compose up -d db
+export $(grep -v '^#' .env.local | xargs)
+npm test
+```
+
 ### Docker
 
 `docker compose up --build` starts Postgres and the Next.js app. The container entrypoint runs `scripts/migrate.mjs` before `node server.js` so the schema is applied automatically.

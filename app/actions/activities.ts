@@ -14,14 +14,21 @@ import {
   type CreateActivityInput,
   type UpdateActivityInput,
 } from "@/dal";
+import type {
+  ActionResult,
+  SerializedActivity,
+  SerializedActivitySummary,
+} from "@/lib/activity-action-types";
 import {
   buildHtmlFromActivity,
   type GeneratedActivityFile,
 } from "@/lib/activity-service";
 
-export type ActionResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: string; field?: string };
+export type {
+  ActionResult,
+  SerializedActivity,
+  SerializedActivitySummary,
+} from "@/lib/activity-action-types";
 
 function toActionError(error: unknown): ActionResult<never> {
   if (error instanceof DalValidationError) {
@@ -36,28 +43,27 @@ function toActionError(error: unknown): ActionResult<never> {
   return { ok: false, error: "Something went wrong." };
 }
 
-/** Serialize dates for client components. */
-function serializeActivity(
-  activity: ActivityConfiguration,
-): ActivityConfiguration {
+function serializeActivity(activity: ActivityConfiguration): SerializedActivity {
   return {
     ...activity,
-    createdAt: new Date(activity.createdAt),
-    updatedAt: new Date(activity.updatedAt),
+    createdAt: new Date(activity.createdAt).toISOString(),
+    updatedAt: new Date(activity.updatedAt).toISOString(),
   };
 }
 
-function serializeSummary(summary: ActivitySummary): ActivitySummary {
+function serializeSummary(
+  summary: ActivitySummary,
+): SerializedActivitySummary {
   return {
     ...summary,
-    createdAt: new Date(summary.createdAt),
-    updatedAt: new Date(summary.updatedAt),
+    createdAt: new Date(summary.createdAt).toISOString(),
+    updatedAt: new Date(summary.updatedAt).toISOString(),
   };
 }
 
 export async function listActivitiesAction(
   activityType: ActivityType,
-): Promise<ActionResult<ActivitySummary[]>> {
+): Promise<ActionResult<SerializedActivitySummary[]>> {
   try {
     const rows = await listActivities({ activityType });
     return { ok: true, data: rows.map(serializeSummary) };
@@ -68,11 +74,11 @@ export async function listActivitiesAction(
 
 export async function getActivityAction(
   id: string,
-): Promise<ActionResult<ActivityConfiguration>> {
+): Promise<ActionResult<SerializedActivity>> {
   try {
     const activity = await getActivity(id);
     if (!activity) {
-      return { ok: false, error: `Activity configuration "${id}" not found.` };
+      throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
     }
     return { ok: true, data: serializeActivity(activity) };
   } catch (error) {
@@ -82,7 +88,7 @@ export async function getActivityAction(
 
 export async function createActivityAction(
   input: CreateActivityInput,
-): Promise<ActionResult<ActivityConfiguration>> {
+): Promise<ActionResult<SerializedActivity>> {
   try {
     const activity = await createActivity(input);
     return { ok: true, data: serializeActivity(activity) };
@@ -94,7 +100,7 @@ export async function createActivityAction(
 export async function updateActivityAction(
   id: string,
   patch: UpdateActivityInput,
-): Promise<ActionResult<ActivityConfiguration>> {
+): Promise<ActionResult<SerializedActivity>> {
   try {
     const activity = await updateActivity(id, patch);
     return { ok: true, data: serializeActivity(activity) };
@@ -120,7 +126,7 @@ export async function generateStoredActivityHtmlAction(
   try {
     const activity = await getActivity(id);
     if (!activity) {
-      return { ok: false, error: `Activity configuration "${id}" not found.` };
+      throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
     }
     return { ok: true, data: buildHtmlFromActivity(activity) };
   } catch (error) {

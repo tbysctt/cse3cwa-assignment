@@ -45,6 +45,8 @@ export function WordleConfigForm({
   customError,
   difficulty,
   onDifficultyChange,
+  maxAttempts,
+  showHints,
   canGenerate,
   generateHint,
   onGenerate,
@@ -63,6 +65,9 @@ export function WordleConfigForm({
   customError?: string | null;
   difficulty: Difficulty;
   onDifficultyChange: (next: Difficulty) => void;
+  /** Effective settings (may differ from difficulty presets when loaded from DB). */
+  maxAttempts?: number;
+  showHints?: boolean;
   canGenerate: boolean;
   generateHint?: string;
   onGenerate: () => void;
@@ -77,6 +82,8 @@ export function WordleConfigForm({
   const selected =
     lengthWords.find((entry) => entry.id === wordId) ?? lengthWords[0];
   const preset = DIFFICULTY_PRESETS[difficulty];
+  const effectiveMaxAttempts = maxAttempts ?? preset.maxAttempts;
+  const effectiveShowHints = showHints ?? preset.showHints;
 
   function handleModeSwitch(nextMode: "corpus" | "custom") {
     if (onModeChange) onModeChange(nextMode);
@@ -355,7 +362,7 @@ export function WordleConfigForm({
 
         <Field
           label="Difficulty"
-          hint={`Sets guess count and hints. Current: ${preset.maxAttempts} guesses, hints ${preset.showHints ? "on" : "off"}.`}
+          hint={`Sets guess count and hints. Current: ${effectiveMaxAttempts} guesses, hints ${effectiveShowHints ? "on" : "off"}.`}
         >
           {(id) => (
             <select

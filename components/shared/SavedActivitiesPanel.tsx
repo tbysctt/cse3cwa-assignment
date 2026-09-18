@@ -1,8 +1,8 @@
 "use client";
 
+import type { SerializedActivitySummary } from "@/lib/activity-action-types";
 import { Field } from "@/components/shared/Field";
 import { SectionCard } from "@/components/shared/SectionCard";
-import type { ActivitySummary } from "@/dal";
 
 const inputClass =
   "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
@@ -29,7 +29,7 @@ export function SavedActivitiesPanel({
 }: {
   activityName: string;
   onActivityNameChange: (name: string) => void;
-  summaries: ActivitySummary[];
+  summaries: SerializedActivitySummary[];
   selectedId: string;
   onSelectedIdChange: (id: string) => void;
   savedId: string | null;
