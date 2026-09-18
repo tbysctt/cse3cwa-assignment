@@ -29,23 +29,25 @@ export type UseSavedActivitiesOptions = {
   draftSignature: string;
   canDraftGenerate: boolean;
   buildCreateInput: () => CreateActivityInput | null;
-  applyLoadedActivity: (activity: SerializedActivity) => void;
+  applyLoadedActivity: (activity: SerializedActivity) => string;
   generateDraftHtml: () => { html: string; filename: string } | null;
   draftGenerateHint: string;
   confirmDelete?: (message: string) => boolean;
 };
 
 export function useSavedActivities(options: UseSavedActivitiesOptions) {
-  const confirmDelete =
-    options.confirmDelete ??
-    ((message: string) =>
-      typeof window !== "undefined" ? window.confirm(message) : false);
+  const confirmDelete = useMemo(
+    () =>
+      options.confirmDelete ??
+      ((message: string) =>
+        typeof window !== "undefined" ? window.confirm(message) : false),
+    [options.confirmDelete],
+  );
 
   const [savedId, setSavedId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState("");
   const [summaries, setSummaries] = useState<SerializedActivitySummary[]>([]);
   const [cleanSignature, setCleanSignature] = useState<string | null>(null);
-  const [pendingClean, setPendingClean] = useState(false);
   const [busy, setBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -74,12 +76,6 @@ export function useSavedActivities(options: UseSavedActivitiesOptions) {
     draftHint: options.draftGenerateHint,
   });
 
-  useEffect(() => {
-    if (!pendingClean) return;
-    setCleanSignature(options.draftSignature);
-    setPendingClean(false);
-  }, [pendingClean, options.draftSignature]);
-
   const refreshSummaries = useCallback(async () => {
     const result = await listActivitiesAction(options.activityType);
     if (result.ok) {
@@ -91,8 +87,22 @@ export function useSavedActivities(options: UseSavedActivitiesOptions) {
   }, [options.activityType]);
 
   useEffect(() => {
-    void refreshSummaries();
-  }, [refreshSummaries]);
+    let cancelled = false;
+
+    void (async () => {
+      const result = await listActivitiesAction(options.activityType);
+      if (cancelled) return;
+      if (result.ok) {
+        setSummaries(result.data);
+      } else {
+        setStatusError(result.error);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [options.activityType]);
 
   const runBusy = useCallback(async (work: () => Promise<void>) => {
     setBusy(true);
@@ -114,8 +124,9 @@ export function useSavedActivities(options: UseSavedActivitiesOptions) {
         return;
       }
       const activity = result.data;
+      let cleanSig: string;
       try {
-        options.applyLoadedActivity(activity);
+        cleanSig = options.applyLoadedActivity(activity);
       } catch (error) {
         setStatusError(
           error instanceof Error
@@ -127,7 +138,7 @@ export function useSavedActivities(options: UseSavedActivitiesOptions) {
       setSavedId(activity.id);
       setSelectedId(activity.id);
       setFormEpoch((epoch) => epoch + 1);
-      setPendingClean(true);
+      setCleanSignature(cleanSig);
       setStatusMessage(`Loaded “${activity.name}”.`);
     });
   }, [options, runBusy, selectedId]);

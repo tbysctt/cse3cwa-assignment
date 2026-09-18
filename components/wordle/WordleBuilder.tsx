@@ -131,6 +131,17 @@ export function WordleBuilder() {
     setCustomEnglish(word.english);
     setCustomPhonemes(word.phonemes);
     setLength(word.phonemes.length as PhonemeLength);
+
+    return draftSignature({
+      name: activity.name,
+      difficulty: activity.difficulty,
+      mode: "custom",
+      target: word,
+      maxAttempts:
+        activity.maxAttempts ??
+        DIFFICULTY_PRESETS[activity.difficulty].maxAttempts,
+      showHints: activity.showHints,
+    });
   }, []);
 
   const buildCreateInput = useCallback(() => {

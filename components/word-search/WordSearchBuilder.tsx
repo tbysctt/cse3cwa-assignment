@@ -192,10 +192,11 @@ export function WordSearchBuilder() {
         `Word Search activities need exactly ${REQUIRED_WORD_COUNT} words.`,
       );
     }
+    const nextSeed = activity.seed ?? DEFAULT_WORD_SEARCH_SEED;
     setActivityName(activity.name);
     setDifficulty(activity.difficulty);
     setStoredShowHints(activity.showHints);
-    setSeed(activity.seed ?? DEFAULT_WORD_SEARCH_SEED);
+    setSeed(nextSeed);
     setMode("custom");
     setCustomEntries(
       loadedWords.map((word) => ({
@@ -204,6 +205,15 @@ export function WordSearchBuilder() {
       })),
     );
     setActiveSlotIndex(0);
+
+    return draftSignature({
+      name: activity.name,
+      difficulty: activity.difficulty,
+      mode: "custom",
+      words: loadedWords,
+      showHints: activity.showHints,
+      seed: nextSeed,
+    });
   }, []);
 
   const buildCreateInput = useCallback(() => {
