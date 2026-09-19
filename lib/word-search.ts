@@ -2,7 +2,7 @@ import {
   allFillerPhonemes,
   type Phoneme,
   type PhonemeWord,
-} from "@/data/phonemes";
+} from "@/lib/phoneme-types";
 import type { Difficulty } from "@/lib/activity";
 
 /** Placement directions. Reverse selection covers the opposite four rays. */
@@ -224,6 +224,7 @@ export function generateWordSearch(
   words: PhonemeWord[],
   size = 8,
   seed = DEFAULT_WORD_SEARCH_SEED,
+  fillerInventory: Phoneme[] = [],
 ): WordSearchPuzzle {
   validateInput(words, size);
   const random = mulberry32(seed);
@@ -259,12 +260,13 @@ export function generateWordSearch(
     placements.push({ word, ...chosen });
   }
 
-  const fillersMap = new Map<string, Phoneme>();
-  for (const p of allFillerPhonemes()) fillersMap.set(p.ipa, p);
-  for (const w of words) {
-    for (const p of w.phonemes) fillersMap.set(p.ipa, p);
+  const fillers = allFillerPhonemes(fillerInventory, words);
+  if (fillers.length === 0) {
+    throw new WordSearchGenerationError(
+      "empty-words",
+      "Need at least one phoneme to fill empty grid cells.",
+    );
   }
-  const fillers = [...fillersMap.values()];
   for (let r = 0; r < size; r += 1) {
     for (let c = 0; c < size; c += 1) {
       if (!grid[r][c]) {

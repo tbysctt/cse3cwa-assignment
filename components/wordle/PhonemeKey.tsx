@@ -1,5 +1,5 @@
 import { PhonemeGlyph } from "@/components/phoneme/PhonemeGlyph";
-import type { Phoneme } from "@/data/phonemes";
+import type { Phoneme } from "@/lib/phoneme-types";
 
 export function PhonemeKey({
   phoneme,

@@ -7,11 +7,11 @@ import { PhonemePickerPalette } from "@/components/phoneme/PhonemePickerPalette"
 import {
   formatIpa,
   phonemeWordDisplay,
+  PHONEME_LENGTHS,
   type Phoneme,
   type PhonemeLength,
   type PhonemeWord,
-} from "@/data/phonemes";
-import { PHONEME_LENGTHS } from "@/data/hce-corpus";
+} from "@/lib/phoneme-types";
 import { DIFFICULTY_OPTIONS, type Difficulty } from "@/lib/activity";
 import {
   formatPhonemeSequence,
@@ -38,6 +38,7 @@ export function WordleConfigForm({
   wordId,
   onWordIdChange,
   lengthWords,
+  inventory = [],
   customEnglish = "",
   onCustomEnglishChange,
   customPhonemes = [],
@@ -58,6 +59,7 @@ export function WordleConfigForm({
   wordId: string;
   onWordIdChange: (next: string) => void;
   lengthWords: PhonemeWord[];
+  inventory?: Phoneme[];
   customEnglish?: string;
   onCustomEnglishChange?: (value: string) => void;
   customPhonemes?: Phoneme[];
@@ -94,7 +96,7 @@ export function WordleConfigForm({
     setPhonemeText(text);
     if (onCustomPhonemesChange) {
       try {
-        const parsed = parsePhonemeSequence(text);
+        const parsed = parsePhonemeSequence(text, inventory);
         onCustomPhonemesChange(parsed);
       } catch {
         // Kept as-is while typing
@@ -122,7 +124,7 @@ export function WordleConfigForm({
   }) {
     if (onCustomEnglishChange) onCustomEnglishChange(presetItem.english);
     if (onCustomPhonemesChange) {
-      const parsed = parsePhonemeSequence(presetItem.rawPhonemes);
+      const parsed = parsePhonemeSequence(presetItem.rawPhonemes, inventory);
       onCustomPhonemesChange(parsed);
       setPhonemeText(formatPhonemeSequence(parsed));
     }
@@ -353,6 +355,7 @@ export function WordleConfigForm({
 
             {/* Clickable Palette */}
             <PhonemePickerPalette
+              inventory={inventory}
               onSelectPhoneme={handleAddPhoneme}
               title="Phoneme click palette"
               description="Click any sound to append to the target word."

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
-import { phonemeWordDisplay } from "@/data/phonemes";
+import type { KeyboardSlot, Phoneme, PhonemeWord } from "@/lib/phoneme-types";
+import { phonemeWordDisplay } from "@/lib/phoneme-types";
 import { evaluateGuess, isWinningGuess, type GuessResult } from "@/lib/wordle";
 import { PhonemeKeyboard } from "./PhonemeKeyboard";
 import { WordleGrid, type SubmittedWordleRow } from "./WordleGrid";
@@ -17,11 +17,13 @@ function isEditableTarget(target: EventTarget | null): boolean {
 export function WordleGame({
   target,
   inventory,
+  keyboardRows,
   maxAttempts,
   showHints,
 }: {
   target: PhonemeWord;
   inventory: Phoneme[];
+  keyboardRows: KeyboardSlot[][];
   maxAttempts: number;
   showHints: boolean;
 }) {
@@ -123,6 +125,7 @@ export function WordleGame({
         <div className="flex min-w-0 flex-col gap-4">
           <PhonemeKeyboard
             inventory={inventory}
+            keyboardRows={keyboardRows}
             showHint={showHints}
             disabled={locked}
             onKeyPress={pushPhoneme}

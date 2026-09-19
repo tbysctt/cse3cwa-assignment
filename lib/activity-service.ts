@@ -1,8 +1,8 @@
-import {
-  HCE_PHONEME_INVENTORY,
-  type Phoneme,
-  type PhonemeWord,
-} from "@/data/phonemes";
+import type {
+  KeyboardSlot,
+  Phoneme,
+  PhonemeWord,
+} from "@/lib/phoneme-types";
 import type {
   ActivityConfiguration,
   CreateActivityInput,
@@ -45,12 +45,15 @@ export function storedWordToPhonemeWord(word: StoredWord): PhonemeWord {
   };
 }
 
-export function inventoryForTarget(target: PhonemeWord): Phoneme[] {
+export function inventoryForTarget(
+  target: PhonemeWord,
+  baseInventory: Phoneme[],
+): Phoneme[] {
   const extras = target.phonemes.filter(
-    (phoneme) => !HCE_PHONEME_INVENTORY.some((p) => p.ipa === phoneme.ipa),
+    (phoneme) => !baseInventory.some((p) => p.ipa === phoneme.ipa),
   );
-  if (extras.length === 0) return HCE_PHONEME_INVENTORY;
-  return [...HCE_PHONEME_INVENTORY, ...extras];
+  if (extras.length === 0) return baseInventory;
+  return [...baseInventory, ...extras];
 }
 
 export function buildWordleCreateInput(options: {
@@ -92,8 +95,14 @@ export type GeneratedActivityFile = {
   filename: string;
 };
 
+export type ActivityReferenceData = {
+  inventory: Phoneme[];
+  keyboardRows: KeyboardSlot[][];
+};
+
 export function buildHtmlFromActivity(
   activity: ActivityConfiguration,
+  reference: ActivityReferenceData,
 ): GeneratedActivityFile {
   if (activity.activityType === "wordle") {
     const storedTarget = activity.words[0];
@@ -108,7 +117,8 @@ export function buildHtmlFromActivity(
       filename: "phoneme-wordle.html",
       html: generateWordleHtml({
         target,
-        inventory: inventoryForTarget(target),
+        inventory: inventoryForTarget(target, reference.inventory),
+        keyboardRows: reference.keyboardRows,
         maxAttempts: activity.maxAttempts,
         difficulty: activity.difficulty,
         showHints: activity.showHints,
@@ -122,6 +132,7 @@ export function buildHtmlFromActivity(
     words,
     GRID_SIZE_BY_DIFFICULTY[activity.difficulty],
     seed,
+    reference.inventory,
   );
   return {
     filename: "phoneme-word-search.html",

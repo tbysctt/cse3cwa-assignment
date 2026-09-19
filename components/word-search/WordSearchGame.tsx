@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
-import { formatIpa } from "@/data/phonemes";
+import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
+import { formatIpa } from "@/lib/phoneme-types";
 import {
   INVALID_SELECTION_FLASH_MS,
   cellsAlongSegment,

@@ -4,7 +4,9 @@ import {
   createActivity,
   deleteActivity,
   getActivity,
+  getKeyboardRows,
   listActivities,
+  listPhonemeInventory,
   updateActivity,
   DalNotFoundError,
   DalValidationError,
@@ -128,7 +130,14 @@ export async function generateStoredActivityHtmlAction(
     if (!activity) {
       throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
     }
-    return { ok: true, data: buildHtmlFromActivity(activity) };
+    const [inventory, keyboardRows] = await Promise.all([
+      listPhonemeInventory(),
+      getKeyboardRows(),
+    ]);
+    return {
+      ok: true,
+      data: buildHtmlFromActivity(activity, { inventory, keyboardRows }),
+    };
   } catch (error) {
     return toActionError(error);
   }

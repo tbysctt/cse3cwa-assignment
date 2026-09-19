@@ -1,11 +1,12 @@
+import { TEST_BUILDER_PROPS, TEST_WORD_SEARCH_PROPS } from "./fixtures";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WordSearchBuilder } from "@/components/word-search/WordSearchBuilder";
 import { WordleBuilder } from "@/components/wordle/WordleBuilder";
-import { WORD_SEARCH_WORDS } from "@/data/phonemes";
 import { downloadTextFile } from "@/lib/download";
 import { DIFFICULTY_PRESETS } from "@/lib/wordle";
+import { wordsForLength } from "@/lib/phoneme-types";
 
 vi.mock("@/lib/download", () => ({
   downloadTextFile: vi.fn(),
@@ -27,16 +28,24 @@ describe("activity builders", () => {
 
   it("downloads a valid Wordle from the HCE corpus with difficulty presets", async () => {
     const user = userEvent.setup();
-    render(<WordleBuilder />);
+    const firstThree = wordsForLength(TEST_BUILDER_PROPS.corpus, 3)[0]!;
+    const firstFive = wordsForLength(TEST_BUILDER_PROPS.corpus, 5)[0]!;
+    render(<WordleBuilder {...TEST_BUILDER_PROPS} />);
     const generate = screen.getByRole("button", { name: "Generate HTML" });
 
     expect(screen.getByRole("combobox", { name: "Phoneme length" })).toHaveValue(
       "3",
     );
     expect(screen.getByRole("combobox", { name: "Corpus word" })).toHaveValue(
-      "thin",
+      firstThree.id,
     );
-    expect(screen.getByText(/\/θ\/ \/ɪ\/ \/n\//)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, element) =>
+          element?.textContent ===
+          `Target: ${firstThree.phonemes.map((p) => `/${p.ipa}/`).join(" ")}`,
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText(/6 guesses, hints on/i)).toBeInTheDocument();
     expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
 
@@ -45,7 +54,7 @@ describe("activity builders", () => {
       "5",
     );
     expect(screen.getByRole("combobox", { name: "Corpus word" })).toHaveValue(
-      "stamp",
+      firstFive.id,
     );
 
     await user.selectOptions(
@@ -60,20 +69,21 @@ describe("activity builders", () => {
       expect.stringContaining("<!DOCTYPE html>"),
     );
     const html = vi.mocked(downloadTextFile).mock.calls[0][1] as string;
-    expect(html).toContain("stamp");
+    expect(html).toContain(firstFive.english);
     expect(html).toContain("key-row");
     expect(html).toContain(`Guesses: ${DIFFICULTY_PRESETS.hard.maxAttempts}`);
   });
 
   it("lets teachers pick five HCE corpus words for Word Search", async () => {
     const user = userEvent.setup();
-    render(<WordSearchBuilder />);
+    render(<WordSearchBuilder {...TEST_WORD_SEARCH_PROPS} />);
     const generate = screen.getByRole("button", { name: "Generate HTML" });
 
     expect(
       screen.getByRole("list", { name: "Word search corpus picks" }),
     ).toBeInTheDocument();
-    for (const [index, word] of WORD_SEARCH_WORDS.entries()) {
+    const defaultPicks = TEST_WORD_SEARCH_PROPS.corpus.slice(0, 5);
+    for (const [index, word] of defaultPicks.entries()) {
       expect(
         screen.getByRole("combobox", { name: `Word ${index + 1}` }),
       ).toHaveValue(word.id);
@@ -84,9 +94,9 @@ describe("activity builders", () => {
 
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Word 1" }),
-      "bed",
+      "zip",
     );
-    expect(screen.getByText(/\/b\/ \/e\/ \/d\//)).toBeInTheDocument();
+    expect(screen.getByText(/\/z\/ \/ɪ\/ \/p\//)).toBeInTheDocument();
 
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Difficulty" }),

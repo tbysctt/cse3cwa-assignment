@@ -5,11 +5,11 @@ import {
   HCE_WORDS_4,
   HCE_WORDS_5,
   wordsForLength,
-} from "@/data/hce-corpus";
+} from "@/data/phonemes";
 import {
   HCE_KEYBOARD_ROWS,
   HCE_PHONEME_INVENTORY,
-} from "@/data/hce-keyboard";
+} from "@/data/phonemes";
 import { WORDLE_TARGET, WORD_SEARCH_WORDS } from "@/data/phonemes";
 
 describe("HCE keyboard and corpus", () => {

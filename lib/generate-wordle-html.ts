@@ -1,5 +1,8 @@
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
-import { HCE_KEYBOARD_ROWS } from "@/data/hce-keyboard";
+import type {
+  KeyboardSlot,
+  Phoneme,
+  PhonemeWord,
+} from "@/lib/phoneme-types";
 import type { Difficulty } from "@/lib/activity";
 import { escapeHtml, toJson } from "@/lib/html";
 import {
@@ -10,13 +13,21 @@ import {
 export type WordleActivitySettings = {
   target: PhonemeWord;
   inventory: Phoneme[];
+  keyboardRows: KeyboardSlot[][];
   maxAttempts: number;
   difficulty: Difficulty;
   showHints: boolean;
 };
 
 export function generateWordleHtml(options: WordleActivitySettings): string {
-  const { target, inventory, maxAttempts, difficulty, showHints } = options;
+  const {
+    target,
+    inventory,
+    keyboardRows,
+    maxAttempts,
+    difficulty,
+    showHints,
+  } = options;
   if (!target.english.trim() || target.phonemes.length === 0) {
     throw new Error("Wordle activities need an English answer and phoneme target.");
   }
@@ -32,6 +43,9 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
   if (inventory.length === 0) {
     throw new Error("Wordle activities need at least one keyboard phoneme.");
   }
+  if (keyboardRows.length === 0) {
+    throw new Error("Wordle activities need a keyboard layout.");
+  }
   const title = "PHONEME'LE";
   const length = target.phonemes.length;
 
@@ -39,7 +53,7 @@ export function generateWordleHtml(options: WordleActivitySettings): string {
     english: target.english,
     target: target.phonemes,
     inventory,
-    keyboardRows: HCE_KEYBOARD_ROWS,
+    keyboardRows,
     maxAttempts,
     length,
     showHints,

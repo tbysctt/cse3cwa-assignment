@@ -1,8 +1,5 @@
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
-import {
-  HCE_PHONEME_INVENTORY,
-  phonemeByIpa,
-} from "@/data/hce-keyboard";
+import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
+import { phonemeByIpa } from "@/lib/phoneme-types";
 
 /**
  * Common typo / alternate spelling mapping to canonical HCE IPA symbols.
@@ -39,48 +36,96 @@ const COMMON_ALIASES: Record<string, string> = {
   uh: "ə",
 };
 
-// Map of canonical IPA -> Phoneme for quick lookup
-const INVENTORY_MAP = new Map<string, Phoneme>(
-  HCE_PHONEME_INVENTORY.map((p) => [p.ipa, p]),
-);
+const CONSONANT_IPAS = [
+  "p",
+  "b",
+  "t",
+  "d",
+  "k",
+  "ɡ",
+  "m",
+  "n",
+  "ŋ",
+  "f",
+  "v",
+  "θ",
+  "ð",
+  "s",
+  "z",
+  "ʃ",
+  "ʒ",
+  "h",
+  "tʃ",
+  "dʒ",
+  "w",
+  "l",
+  "ɹ",
+  "j",
+] as const;
 
-// Map of grapheme -> Phoneme (case-insensitive)
-const GRAPHEME_MAP = new Map<string, Phoneme>(
-  HCE_PHONEME_INVENTORY.map((p) => [p.grapheme.toLowerCase(), p]),
-);
+const VOWEL_IPAS = [
+  "ɪ",
+  "e",
+  "æ",
+  "ɐ",
+  "ɔ",
+  "ʊ",
+  "ə",
+  "iː",
+  "eː",
+  "ɐː",
+  "ɜː",
+  "ʉː",
+  "oː",
+  "æɪ",
+  "ɑe",
+  "oɪ",
+  "əʉ",
+  "æɔ",
+  "ɪə",
+] as const;
+
+function inventoryMaps(inventory: Phoneme[]) {
+  return {
+    byIpa: new Map(inventory.map((p) => [p.ipa, p])),
+    byGrapheme: new Map(
+      inventory.map((p) => [p.grapheme.toLowerCase(), p]),
+    ),
+  };
+}
 
 /**
  * Resolves a single raw token to a Phoneme object.
  * Checks exact IPA, aliases, graphemes, or constructs an arbitrary fallback Phoneme.
  */
-export function resolveSinglePhoneme(token: string): Phoneme {
+export function resolveSinglePhoneme(
+  token: string,
+  inventory: Phoneme[] = [],
+): Phoneme {
   const cleaned = token.replace(/^\/+|\/+$/g, "").trim();
   if (!cleaned) {
     throw new Error("Phoneme token cannot be empty.");
   }
 
-  // 1. Direct IPA match in HCE inventory
-  const directMatch = INVENTORY_MAP.get(cleaned);
+  const { byIpa, byGrapheme } = inventoryMaps(inventory);
+
+  const directMatch = byIpa.get(cleaned);
   if (directMatch) return directMatch;
 
-  // 2. Common typo / alias mapping (e.g. g -> ɡ, r -> ɹ, th -> θ)
   const lower = cleaned.toLowerCase();
   const aliasedIpa = COMMON_ALIASES[lower];
   if (aliasedIpa) {
-    const aliasedMatch = INVENTORY_MAP.get(aliasedIpa);
+    const aliasedMatch = byIpa.get(aliasedIpa);
     if (aliasedMatch) return aliasedMatch;
   }
 
-  // 3. Grapheme match (e.g. "TH", "SH", "CH", "EE")
-  const graphemeMatch = GRAPHEME_MAP.get(lower);
+  const graphemeMatch = byGrapheme.get(lower);
   if (graphemeMatch) return graphemeMatch;
 
-  // 4. Case-insensitive IPA match
-  for (const p of HCE_PHONEME_INVENTORY) {
+  for (const p of inventory) {
     if (p.ipa.toLowerCase() === lower) return p;
   }
 
-  // 5. Arbitrary phoneme fallback (for symbols outside the 43 HCE items)
   return {
     ipa: cleaned,
     grapheme: cleaned.toUpperCase(),
@@ -93,29 +138,29 @@ export function resolveSinglePhoneme(token: string): Phoneme {
  * Accepts slash notation (`/k/ /æ/ /t/` or `/k//æ//t/`), space/comma separation (`k æ t`),
  * or compound symbols (`tʃ, æɪ, n`).
  */
-export function parsePhonemeSequence(input: string): Phoneme[] {
+export function parsePhonemeSequence(
+  input: string,
+  inventory: Phoneme[] = [],
+): Phoneme[] {
   const trimmed = input.trim();
   if (!trimmed) return [];
 
   let rawTokens: string[] = [];
 
-  // Check if string contains slashes
   if (trimmed.includes("/")) {
     const slashMatches = [...trimmed.matchAll(/\/([^/]+)\//g)];
     if (slashMatches.length > 0) {
       rawTokens = slashMatches.map((m) => m[1].trim()).filter(Boolean);
     } else {
-      // Split by slash and filter empty
       rawTokens = trimmed.split("/").map((t) => t.trim()).filter(Boolean);
     }
   } else if (trimmed.includes(",") || trimmed.includes(";")) {
     rawTokens = trimmed.split(/[,;]+/).map((t) => t.trim()).filter(Boolean);
   } else {
-    // Space-delimited
     rawTokens = trimmed.split(/\s+/).map((t) => t.trim()).filter(Boolean);
   }
 
-  return rawTokens.map(resolveSinglePhoneme);
+  return rawTokens.map((token) => resolveSinglePhoneme(token, inventory));
 }
 
 /**
@@ -144,7 +189,8 @@ export function validateCustomWord(
   },
 ): WordValidationResult {
   const trimmed = english.trim();
-  const prefix = options?.wordIndex !== undefined ? `Word ${options.wordIndex + 1}: ` : "";
+  const prefix =
+    options?.wordIndex !== undefined ? `Word ${options.wordIndex + 1}: ` : "";
 
   if (!trimmed) {
     return {
@@ -191,60 +237,21 @@ export function validateCustomWord(
   };
 }
 
-/** Grouped phonemes for the teacher palette UI. */
-export const PALETTE_CONSONANTS: Phoneme[] = [
-  // Plosives/Stops
-  phonemeByIpa("p"),
-  phonemeByIpa("b"),
-  phonemeByIpa("t"),
-  phonemeByIpa("d"),
-  phonemeByIpa("k"),
-  phonemeByIpa("ɡ"),
-  // Nasals
-  phonemeByIpa("m"),
-  phonemeByIpa("n"),
-  phonemeByIpa("ŋ"),
-  // Fricatives
-  phonemeByIpa("f"),
-  phonemeByIpa("v"),
-  phonemeByIpa("θ"),
-  phonemeByIpa("ð"),
-  phonemeByIpa("s"),
-  phonemeByIpa("z"),
-  phonemeByIpa("ʃ"),
-  phonemeByIpa("ʒ"),
-  phonemeByIpa("h"),
-  // Affricates
-  phonemeByIpa("tʃ"),
-  phonemeByIpa("dʒ"),
-  // Approximants / Liquids / Glides
-  phonemeByIpa("w"),
-  phonemeByIpa("l"),
-  phonemeByIpa("ɹ"),
-  phonemeByIpa("j"),
-];
+function pickByIpas(inventory: Phoneme[], ipas: readonly string[]): Phoneme[] {
+  return ipas.flatMap((ipa) => {
+    try {
+      return [phonemeByIpa(inventory, ipa)];
+    } catch {
+      return [];
+    }
+  });
+}
 
-export const PALETTE_VOWELS: Phoneme[] = [
-  // Short vowels / Monophthongs
-  phonemeByIpa("ɪ"),
-  phonemeByIpa("e"),
-  phonemeByIpa("æ"),
-  phonemeByIpa("ɐ"),
-  phonemeByIpa("ɔ"),
-  phonemeByIpa("ʊ"),
-  phonemeByIpa("ə"),
-  // Long vowels
-  phonemeByIpa("iː"),
-  phonemeByIpa("eː"),
-  phonemeByIpa("ɐː"),
-  phonemeByIpa("ɜː"),
-  phonemeByIpa("ʉː"),
-  phonemeByIpa("oː"),
-  // Diphthongs
-  phonemeByIpa("æɪ"),
-  phonemeByIpa("ɑe"),
-  phonemeByIpa("oɪ"),
-  phonemeByIpa("əʉ"),
-  phonemeByIpa("æɔ"),
-  phonemeByIpa("ɪə"),
-];
+/** Grouped phonemes for the teacher palette UI, drawn from the live inventory. */
+export function paletteConsonants(inventory: Phoneme[]): Phoneme[] {
+  return pickByIpas(inventory, CONSONANT_IPAS);
+}
+
+export function paletteVowels(inventory: Phoneme[]): Phoneme[] {
+  return pickByIpas(inventory, VOWEL_IPAS);
+}

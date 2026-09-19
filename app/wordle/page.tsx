@@ -1,3 +1,8 @@
+import {
+  getKeyboardRows,
+  listCorpusWords,
+  listPhonemeInventory,
+} from "@/dal";
 import { WordleBuilder } from "@/components/wordle/WordleBuilder";
 import type { Metadata } from "next";
 
@@ -5,7 +10,13 @@ export const metadata: Metadata = {
   title: "Wordle",
 };
 
-export default function WordlePage() {
+export default async function WordlePage() {
+  const [inventory, keyboardRows, corpus] = await Promise.all([
+    listPhonemeInventory(),
+    getKeyboardRows(),
+    listCorpusWords(),
+  ]);
+
   return (
     <div className="flex flex-col gap-(--section-gap)">
       <header>
@@ -16,7 +27,11 @@ export default function WordlePage() {
           download a single HTML file that runs offline in any browser.
         </p>
       </header>
-      <WordleBuilder />
+      <WordleBuilder
+        inventory={inventory}
+        keyboardRows={keyboardRows}
+        corpus={corpus}
+      />
     </div>
   );
 }

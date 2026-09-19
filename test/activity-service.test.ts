@@ -1,3 +1,4 @@
+import { TEST_REFERENCE } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import type { ActivityConfiguration } from "@/dal";
 import {
@@ -8,6 +9,7 @@ import {
   storedWordToPhonemeWord,
   wordToInput,
 } from "@/lib/activity-service";
+import { HCE_PHONEME_INVENTORY } from "@/data/phonemes";
 import { DEFAULT_WORD_SEARCH_SEED } from "@/lib/word-search";
 
 const thinPhonemes = [
@@ -60,7 +62,7 @@ describe("activity-service", () => {
       phonemes: thinPhonemes,
     });
     expect(mapped.id).toBe("db-1");
-    expect(inventoryForTarget(mapped).some((p) => p.ipa === "θ")).toBe(true);
+    expect(inventoryForTarget(mapped, HCE_PHONEME_INVENTORY).some((p) => p.ipa === "θ")).toBe(true);
   });
 
   it("builds Wordle HTML from a stored activity", () => {
@@ -77,7 +79,7 @@ describe("activity-service", () => {
       updatedAt: new Date(),
     };
 
-    const file = buildHtmlFromActivity(activity);
+    const file = buildHtmlFromActivity(activity, TEST_REFERENCE);
     expect(file.filename).toBe("phoneme-wordle.html");
     expect(file.html).toContain("<!DOCTYPE html>");
     expect(file.html).toContain("thin");
@@ -141,7 +143,7 @@ describe("activity-service", () => {
       updatedAt: new Date(),
     };
 
-    const file = buildHtmlFromActivity(activity);
+    const file = buildHtmlFromActivity(activity, TEST_REFERENCE);
     expect(file.filename).toBe("phoneme-word-search.html");
     expect(file.html).toContain("<!DOCTYPE html>");
     expect(file.html).toContain("thin");
@@ -160,7 +162,7 @@ describe("activity-service", () => {
         words: [{ id: "w1", english: "thin", phonemes: thinPhonemes }],
         createdAt: new Date(),
         updatedAt: new Date(),
-      }),
+      }, TEST_REFERENCE),
     ).toThrow(/maxAttempts/i);
 
     expect(() =>
@@ -175,7 +177,7 @@ describe("activity-service", () => {
         words: [],
         createdAt: new Date(),
         updatedAt: new Date(),
-      }),
+      }, TEST_REFERENCE),
     ).toThrow(/target word/i);
   });
 
@@ -231,7 +233,7 @@ describe("activity-service", () => {
       words: corpus.map((word, index) => ({ id: `w${index}`, ...word })),
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    }, TEST_REFERENCE);
     const withDefaultSeed = buildHtmlFromActivity({
       id: "a2",
       name: "Search",
@@ -243,7 +245,7 @@ describe("activity-service", () => {
       words: corpus.map((word, index) => ({ id: `w${index}`, ...word })),
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    }, TEST_REFERENCE);
     expect(withNullSeed.html).toBe(withDefaultSeed.html);
   });
 
@@ -257,7 +259,7 @@ describe("activity-service", () => {
         { ipa: "n", grapheme: "N", example: "as in thin" },
       ],
     };
-    const inventory = inventoryForTarget(custom);
+    const inventory = inventoryForTarget(custom, HCE_PHONEME_INVENTORY);
     expect(inventory.some((p) => p.ipa === "ʔ")).toBe(true);
   });
 });

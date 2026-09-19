@@ -1,6 +1,10 @@
 "use client";
 
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import type {
+  KeyboardSlot,
+  Phoneme,
+  PhonemeWord,
+} from "@/lib/phoneme-types";
 import { ActivityPreviewShell } from "@/components/shared/ActivityPreviewShell";
 import { activitySignature } from "@/lib/activity";
 import { WordleGame } from "./WordleGame";
@@ -14,11 +18,13 @@ import { WordleGame } from "./WordleGame";
 export function WordleActivityPreview({
   target,
   inventory,
+  keyboardRows,
   maxAttempts,
   showHints,
 }: {
   target: PhonemeWord | null;
   inventory: Phoneme[];
+  keyboardRows: KeyboardSlot[][];
   maxAttempts: number;
   showHints: boolean;
 }) {
@@ -42,6 +48,7 @@ export function WordleActivityPreview({
           key={gameKey}
           target={target}
           inventory={inventory}
+          keyboardRows={keyboardRows}
           maxAttempts={maxAttempts}
           showHints={showHints}
         />

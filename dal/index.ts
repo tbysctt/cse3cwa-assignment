@@ -14,6 +14,13 @@ export {
   updateActivity,
 } from "./activities";
 
+export {
+  findCorpusWordBySlug,
+  getKeyboardRows,
+  listCorpusWords,
+  listPhonemeInventory,
+} from "./reference";
+
 export type {
   ActivityConfiguration,
   ActivitySummary,

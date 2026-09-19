@@ -1,5 +1,5 @@
-import type { Phoneme } from "@/data/phonemes";
-import { formatIpa } from "@/data/phonemes";
+import type { Phoneme } from "@/lib/phoneme-types";
+import { formatIpa } from "@/lib/phoneme-types";
 import { tileStatusClass, tileStatusLabel } from "@/lib/tile-styles";
 import type { TileStatus } from "@/lib/wordle";
 

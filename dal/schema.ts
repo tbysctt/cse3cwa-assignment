@@ -66,6 +66,56 @@ export const wordPhonemes = pgTable(
   ],
 );
 
+/** Shared HCE phoneme catalog (keyboard + corpus resolution). */
+export const phonemes = pgTable("phonemes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ipa: text("ipa").notNull().unique(),
+  grapheme: text("grapheme").notNull(),
+  example: text("example").notNull(),
+});
+
+/** Classroom keyboard layout; null phoneme_id = blank key. */
+export const keyboardSlots = pgTable(
+  "keyboard_slots",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    row: integer("row").notNull(),
+    col: integer("col").notNull(),
+    phonemeId: uuid("phoneme_id").references(() => phonemes.id, {
+      onDelete: "set null",
+    }),
+  },
+  (table) => [unique("keyboard_slots_row_col_uid").on(table.row, table.col)],
+);
+
+/** Reference HCE corpus for builder pickers. */
+export const corpusWords = pgTable("corpus_words", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  english: text("english").notNull(),
+  phonemeLength: integer("phoneme_length").notNull(),
+});
+
+export const corpusWordPhonemes = pgTable(
+  "corpus_word_phonemes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    corpusWordId: uuid("corpus_word_id")
+      .notNull()
+      .references(() => corpusWords.id, { onDelete: "cascade" }),
+    position: integer("position").notNull(),
+    phonemeId: uuid("phoneme_id")
+      .notNull()
+      .references(() => phonemes.id, { onDelete: "restrict" }),
+  },
+  (table) => [
+    unique("corpus_word_phonemes_word_position_uid").on(
+      table.corpusWordId,
+      table.position,
+    ),
+  ],
+);
+
 export const activityConfigurationsRelations = relations(
   activityConfigurations,
   ({ many }) => ({
@@ -87,3 +137,33 @@ export const wordPhonemesRelations = relations(wordPhonemes, ({ one }) => ({
     references: [words.id],
   }),
 }));
+
+export const phonemesRelations = relations(phonemes, ({ many }) => ({
+  keyboardSlots: many(keyboardSlots),
+  corpusWordPhonemes: many(corpusWordPhonemes),
+}));
+
+export const keyboardSlotsRelations = relations(keyboardSlots, ({ one }) => ({
+  phoneme: one(phonemes, {
+    fields: [keyboardSlots.phonemeId],
+    references: [phonemes.id],
+  }),
+}));
+
+export const corpusWordsRelations = relations(corpusWords, ({ many }) => ({
+  phonemes: many(corpusWordPhonemes),
+}));
+
+export const corpusWordPhonemesRelations = relations(
+  corpusWordPhonemes,
+  ({ one }) => ({
+    word: one(corpusWords, {
+      fields: [corpusWordPhonemes.corpusWordId],
+      references: [corpusWords.id],
+    }),
+    phoneme: one(phonemes, {
+      fields: [corpusWordPhonemes.phonemeId],
+      references: [phonemes.id],
+    }),
+  }),
+);

@@ -1,10 +1,4 @@
-import type { Phoneme } from "@/data/phonemes";
-
-/**
- * Fixed HCE keyboard rows for wɜːdəl. Each row may include intentional blank
- * slots (null) so the layout matches the classroom material.
- */
-export type KeyboardSlot = Phoneme | null;
+import type { Phoneme, KeyboardSlot } from "@/lib/phoneme-types";
 
 export const HCE_KEYBOARD_ROWS: KeyboardSlot[][] = [
   [

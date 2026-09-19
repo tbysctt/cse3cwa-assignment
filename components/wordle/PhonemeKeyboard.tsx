@@ -1,13 +1,18 @@
-import type { Phoneme } from "@/data/phonemes";
-import { HCE_KEYBOARD_ROWS, type KeyboardSlot } from "@/data/hce-keyboard";
+import type {
+  KeyboardSlot,
+  Phoneme,
+} from "@/lib/phoneme-types";
 import { PhonemeKey } from "./PhonemeKey";
 
-function rowsForInventory(inventory: Phoneme[]): KeyboardSlot[][] {
+function rowsForInventory(
+  inventory: Phoneme[],
+  keyboardRows: KeyboardSlot[][],
+): KeyboardSlot[][] {
   const allowed = new Set(inventory.map((phoneme) => phoneme.ipa));
   const byIpa = new Map(inventory.map((phoneme) => [phoneme.ipa, phoneme]));
   const drawn = new Set<string>();
 
-  const rows = HCE_KEYBOARD_ROWS.map((row) =>
+  const rows = keyboardRows.map((row) =>
     row.map((slot) => {
       if (slot === null) return null;
       if (!allowed.has(slot.ipa)) return null;
@@ -30,16 +35,18 @@ function rowsForInventory(inventory: Phoneme[]): KeyboardSlot[][] {
 
 export function PhonemeKeyboard({
   inventory,
+  keyboardRows,
   showHint,
   disabled,
   onKeyPress,
 }: {
   inventory: Phoneme[];
+  keyboardRows: KeyboardSlot[][];
   showHint: boolean;
   disabled?: boolean;
   onKeyPress: (phoneme: Phoneme) => void;
 }) {
-  const rows = rowsForInventory(inventory);
+  const rows = rowsForInventory(inventory, keyboardRows);
 
   return (
     <div

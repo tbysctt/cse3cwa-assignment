@@ -9,12 +9,8 @@ import {
   WordSearchConfigForm,
   type CustomWordEntry,
 } from "@/components/word-search/WordSearchConfigForm";
-import {
-  findCorpusWord,
-  WORD_SEARCH_WORDS,
-  type Phoneme,
-  type PhonemeWord,
-} from "@/data/phonemes";
+import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
+import { findCorpusWord } from "@/lib/phoneme-types";
 import { useSavedActivities } from "@/hooks/useSavedActivities";
 import {
   activitySignature,
@@ -38,13 +34,20 @@ import {
   type WordSearchPuzzle,
 } from "@/lib/word-search";
 
-const DEFAULT_CUSTOM_WORDS: CustomWordEntry[] = [
-  { english: "cat", phonemes: parsePhonemeSequence("/k/ /æ/ /t/") },
-  { english: "dog", phonemes: parsePhonemeSequence("/d/ /ɔ/ /ɡ/") },
-  { english: "fish", phonemes: parsePhonemeSequence("/f/ /ɪ/ /ʃ/") },
-  { english: "frog", phonemes: parsePhonemeSequence("/f/ /ɹ/ /ɔ/ /ɡ/") },
-  { english: "milk", phonemes: parsePhonemeSequence("/m/ /ɪ/ /l/ /k/") },
-];
+function emptyCustomEntries(inventory: Phoneme[]): CustomWordEntry[] {
+  const samples = [
+    "/k/ /æ/ /t/",
+    "/d/ /ɔ/ /ɡ/",
+    "/f/ /ɪ/ /ʃ/",
+    "/f/ /ɹ/ /ɔ/ /ɡ/",
+    "/m/ /ɪ/ /l/ /k/",
+  ];
+  const labels = ["cat", "dog", "fish", "frog", "milk"];
+  return labels.map((english, i) => ({
+    english,
+    phonemes: parsePhonemeSequence(samples[i], inventory),
+  }));
+}
 
 function draftSignature(parts: {
   name: string;
@@ -71,14 +74,28 @@ function draftSignature(parts: {
   });
 }
 
-export function WordSearchBuilder() {
+export function WordSearchBuilder({
+  inventory,
+  corpus,
+}: {
+  inventory: Phoneme[];
+  corpus: PhonemeWord[];
+}) {
+
+  const initialCorpusIds = corpus
+    .slice(0, REQUIRED_WORD_COUNT)
+    .map((word) => word.id);
+
   const [mode, setMode] = useState<"corpus" | "custom">("corpus");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
-  const [wordIds, setWordIds] = useState<string[]>(() =>
-    WORD_SEARCH_WORDS.map((word) => word.id),
-  );
-  const [customEntries, setCustomEntries] = useState<CustomWordEntry[]>(
-    DEFAULT_CUSTOM_WORDS,
+  const [wordIds, setWordIds] = useState<string[]>(() => {
+    if (initialCorpusIds.length === REQUIRED_WORD_COUNT) {
+      return initialCorpusIds;
+    }
+    return Array.from({ length: REQUIRED_WORD_COUNT }, () => "");
+  });
+  const [customEntries, setCustomEntries] = useState<CustomWordEntry[]>(() =>
+    emptyCustomEntries(inventory),
   );
   const [activeSlotIndex, setActiveSlotIndex] = useState(0);
   const [seed, setSeed] = useState(DEFAULT_WORD_SEARCH_SEED);
@@ -90,10 +107,10 @@ export function WordSearchBuilder() {
 
   const corpusWords = useMemo<PhonemeWord[]>(() => {
     return wordIds.flatMap((id) => {
-      const match = findCorpusWord(id);
+      const match = findCorpusWord(corpus, id);
       return match ? [match] : [];
     });
-  }, [wordIds]);
+  }, [wordIds, corpus]);
 
   const customValidation = useMemo<{
     words: PhonemeWord[];
@@ -154,7 +171,7 @@ export function WordSearchBuilder() {
     }
     try {
       return {
-        puzzle: generateWordSearch(words, gridSize, seed),
+        puzzle: generateWordSearch(words, gridSize, seed, inventory),
         error: null,
       };
     } catch (error) {
@@ -166,7 +183,7 @@ export function WordSearchBuilder() {
             : "The word search could not be generated.",
       };
     }
-  }, [mode, customValidation, words, gridSize, seed]);
+  }, [mode, customValidation, words, gridSize, seed, inventory]);
 
   const { puzzle } = puzzleResult;
   const canDraftGenerate =
@@ -277,7 +294,7 @@ export function WordSearchBuilder() {
   }
 
   function handleLoadSampleWords() {
-    setCustomEntries(DEFAULT_CUSTOM_WORDS);
+    setCustomEntries(emptyCustomEntries(inventory));
   }
 
   function handleDifficultyChange(next: Difficulty) {
@@ -312,6 +329,8 @@ export function WordSearchBuilder() {
             onModeChange={setMode}
             wordIds={wordIds}
             words={words}
+            corpus={corpus}
+            inventory={inventory}
             onWordIdChange={handleWordIdChange}
             customEntries={customEntries}
             onCustomEntryChange={handleCustomEntryChange}

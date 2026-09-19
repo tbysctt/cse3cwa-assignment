@@ -5,12 +5,11 @@ import { Field } from "@/components/shared/Field";
 import { SectionCard } from "@/components/shared/SectionCard";
 import { PhonemePickerPalette } from "@/components/phoneme/PhonemePickerPalette";
 import {
-  HCE_CORPUS,
   formatIpa,
   phonemeWordDisplay,
   type Phoneme,
   type PhonemeWord,
-} from "@/data/phonemes";
+} from "@/lib/phoneme-types";
 import { DIFFICULTY_OPTIONS, type Difficulty } from "@/lib/activity";
 import {
   formatPhonemeSequence,
@@ -32,6 +31,8 @@ export function WordSearchConfigForm({
   onModeChange,
   wordIds,
   words,
+  corpus = [],
+  inventory = [],
   onWordIdChange,
   customEntries = [],
   onCustomEntryChange,
@@ -50,6 +51,8 @@ export function WordSearchConfigForm({
   onModeChange?: (mode: "corpus" | "custom") => void;
   wordIds: string[];
   words: PhonemeWord[];
+  corpus?: PhonemeWord[];
+  inventory?: Phoneme[];
   onWordIdChange: (index: number, nextId: string) => void;
   customEntries?: CustomWordEntry[];
   onCustomEntryChange?: (index: number, entry: CustomWordEntry) => void;
@@ -84,7 +87,7 @@ export function WordSearchConfigForm({
     if (!onCustomEntryChange) return;
     const currentEntry = customEntries[index] ?? { english: "", phonemes: [] };
     try {
-      const parsed = parsePhonemeSequence(text);
+      const parsed = parsePhonemeSequence(text, inventory);
       onCustomEntryChange(index, { ...currentEntry, phonemes: parsed });
     } catch {
       // Kept while typing
@@ -170,7 +173,7 @@ export function WordSearchConfigForm({
               {wordIds.map((wordId, index) => {
                 const selected =
                   words.find((word) => word.id === wordId) ??
-                  HCE_CORPUS.find((word) => word.id === wordId);
+                  corpus.find((word) => word.id === wordId);
                 const takenElsewhere = new Set(
                   wordIds.filter((_, i) => i !== index),
                 );
@@ -190,7 +193,7 @@ export function WordSearchConfigForm({
                         onWordIdChange(index, event.target.value)
                       }
                     >
-                      {HCE_CORPUS.map((entry) => (
+                      {corpus.map((entry) => (
                         <option
                           key={entry.id}
                           value={entry.id}
@@ -358,6 +361,7 @@ export function WordSearchConfigForm({
             {/* Clickable Palette for Active Slot */}
             {onAppendPhonemeToSlot ? (
               <PhonemePickerPalette
+                inventory={inventory}
                 onSelectPhoneme={onAppendPhonemeToSlot}
                 title={`Append to Word ${activeSlotIndex + 1}`}
                 description={`Clicking any sound appends it to Word ${activeSlotIndex + 1}.`}

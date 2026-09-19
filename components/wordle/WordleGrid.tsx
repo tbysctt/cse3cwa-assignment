@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { Phoneme } from "@/data/phonemes";
+import type { Phoneme } from "@/lib/phoneme-types";
 import type { GuessResult } from "@/lib/wordle";
 import { WordleRow, type WordleRowView } from "./WordleRow";
 

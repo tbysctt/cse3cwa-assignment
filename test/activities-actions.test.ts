@@ -26,6 +26,9 @@ const sampleActivity: ActivityConfiguration = {
 
 vi.mock("@/dal", async () => {
   const errors = await import("@/dal/errors");
+  const { HCE_KEYBOARD_ROWS, HCE_PHONEME_INVENTORY } = await import(
+    "@/data/phonemes"
+  );
   return {
     createActivity: vi.fn(),
     getActivity: vi.fn(),
@@ -33,6 +36,10 @@ vi.mock("@/dal", async () => {
     updateActivity: vi.fn(),
     deleteActivity: vi.fn(),
     ping: vi.fn(),
+    listPhonemeInventory: vi.fn(async () => HCE_PHONEME_INVENTORY),
+    getKeyboardRows: vi.fn(async () => HCE_KEYBOARD_ROWS),
+    listCorpusWords: vi.fn(async () => []),
+    findCorpusWordBySlug: vi.fn(async () => null),
     DalNotFoundError: errors.DalNotFoundError,
     DalValidationError: errors.DalValidationError,
   };

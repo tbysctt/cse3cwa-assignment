@@ -1,3 +1,4 @@
+import { HCE_PHONEME_INVENTORY } from "@/data/phonemes";
 import { describe, expect, it } from "vitest";
 import {
   formatPhonemeSequence,
@@ -8,32 +9,32 @@ import {
 
 describe("Custom phonemes parsing and canonicalization", () => {
   it("resolves direct IPA symbols from the HCE inventory", () => {
-    const p = resolveSinglePhoneme("θ");
+    const p = resolveSinglePhoneme("θ", HCE_PHONEME_INVENTORY);
     expect(p.ipa).toBe("θ");
     expect(p.grapheme).toBe("TH");
 
-    const k = resolveSinglePhoneme("/k/");
+    const k = resolveSinglePhoneme("/k/", HCE_PHONEME_INVENTORY);
     expect(k.ipa).toBe("k");
     expect(k.grapheme).toBe("K");
   });
 
   it("canonicalizes common Latin typos to IPA equivalents", () => {
     // Latin 'g' to script 'ɡ'
-    const g = resolveSinglePhoneme("g");
+    const g = resolveSinglePhoneme("g", HCE_PHONEME_INVENTORY);
     expect(g.ipa).toBe("ɡ");
 
     // Latin 'r' to turned 'ɹ'
-    const r = resolveSinglePhoneme("r");
+    const r = resolveSinglePhoneme("r", HCE_PHONEME_INVENTORY);
     expect(r.ipa).toBe("ɹ");
   });
 
   it("maps common digraphs and graphemes to phonemes", () => {
-    expect(resolveSinglePhoneme("th").ipa).toBe("θ");
-    expect(resolveSinglePhoneme("sh").ipa).toBe("ʃ");
-    expect(resolveSinglePhoneme("ch").ipa).toBe("tʃ");
-    expect(resolveSinglePhoneme("ng").ipa).toBe("ŋ");
-    expect(resolveSinglePhoneme("ee").ipa).toBe("iː");
-    expect(resolveSinglePhoneme("oo").ipa).toBe("ʉː");
+    expect(resolveSinglePhoneme("th", HCE_PHONEME_INVENTORY).ipa).toBe("θ");
+    expect(resolveSinglePhoneme("sh", HCE_PHONEME_INVENTORY).ipa).toBe("ʃ");
+    expect(resolveSinglePhoneme("ch", HCE_PHONEME_INVENTORY).ipa).toBe("tʃ");
+    expect(resolveSinglePhoneme("ng", HCE_PHONEME_INVENTORY).ipa).toBe("ŋ");
+    expect(resolveSinglePhoneme("ee", HCE_PHONEME_INVENTORY).ipa).toBe("iː");
+    expect(resolveSinglePhoneme("oo", HCE_PHONEME_INVENTORY).ipa).toBe("ʉː");
   });
 
   it("creates fallback Phoneme objects for arbitrary non-HCE IPA symbols", () => {
@@ -47,34 +48,34 @@ describe("Custom phonemes parsing and canonicalization", () => {
   });
 
   it("parses slash-delimited sequences correctly", () => {
-    const result1 = parsePhonemeSequence("/k/ /æ/ /t/");
+    const result1 = parsePhonemeSequence("/k/ /æ/ /t/", HCE_PHONEME_INVENTORY);
     expect(result1.map((p) => p.ipa)).toEqual(["k", "æ", "t"]);
 
-    const result2 = parsePhonemeSequence("/k//æ//t/");
+    const result2 = parsePhonemeSequence("/k//æ//t/", HCE_PHONEME_INVENTORY);
     expect(result2.map((p) => p.ipa)).toEqual(["k", "æ", "t"]);
   });
 
   it("parses space- and comma-delimited sequences", () => {
-    const spaces = parsePhonemeSequence("k æ t");
+    const spaces = parsePhonemeSequence("k æ t", HCE_PHONEME_INVENTORY);
     expect(spaces.map((p) => p.ipa)).toEqual(["k", "æ", "t"]);
 
-    const commas = parsePhonemeSequence("tʃ, æɪ, n");
+    const commas = parsePhonemeSequence("tʃ, æɪ, n", HCE_PHONEME_INVENTORY);
     expect(commas.map((p) => p.ipa)).toEqual(["tʃ", "æɪ", "n"]);
   });
 
   it("formats sequences back to slash-delimited representation", () => {
-    const phonemes = parsePhonemeSequence("/b/ /iː/ /tʃ/");
+    const phonemes = parsePhonemeSequence("/b/ /iː/ /tʃ/", HCE_PHONEME_INVENTORY);
     expect(formatPhonemeSequence(phonemes)).toBe("/b/ /iː/ /tʃ/");
   });
 
   it("handles empty or whitespace-only inputs gracefully", () => {
-    expect(parsePhonemeSequence("")).toEqual([]);
-    expect(parsePhonemeSequence("   ")).toEqual([]);
+    expect(parsePhonemeSequence("", HCE_PHONEME_INVENTORY)).toEqual([]);
+    expect(parsePhonemeSequence("   ", HCE_PHONEME_INVENTORY)).toEqual([]);
   });
 });
 
 describe("Custom word validation", () => {
-  const catPhonemes = parsePhonemeSequence("/k/ /æ/ /t/");
+  const catPhonemes = parsePhonemeSequence("/k/ /æ/ /t/", HCE_PHONEME_INVENTORY);
 
   it("validates a well-formed word", () => {
     const result = validateCustomWord("Cat", catPhonemes);

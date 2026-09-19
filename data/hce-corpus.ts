@@ -1,7 +1,7 @@
-import type { PhonemeWord } from "@/data/phonemes";
+import type { PhonemeWord, PhonemeLength } from "@/lib/phoneme-types";
 import { resolveHcePhonemes } from "@/data/hce-keyboard";
 
-export type PhonemeLength = 3 | 4 | 5;
+export type { PhonemeLength };
 
 function word(
   english: string,

@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import type { Phoneme } from "@/data/phonemes";
-import { formatIpa, hintLabel } from "@/data/phonemes";
-import { PALETTE_CONSONANTS, PALETTE_VOWELS } from "@/lib/custom-phonemes";
+import { useMemo, useState } from "react";
+import type { Phoneme } from "@/lib/phoneme-types";
+import { formatIpa, hintLabel } from "@/lib/phoneme-types";
+import {
+  paletteConsonants,
+  paletteVowels,
+} from "@/lib/custom-phonemes";
 
 export function PhonemePickerPalette({
+  inventory,
   onSelectPhoneme,
   title = "Phoneme keyboard palette",
   description = "Click any phoneme symbol to append it to your active custom word.",
 }: {
+  inventory: Phoneme[];
   onSelectPhoneme: (phoneme: Phoneme) => void;
   title?: string;
   description?: string;
@@ -18,7 +23,12 @@ export function PhonemePickerPalette({
     "consonants",
   );
 
-  const list = activeTab === "consonants" ? PALETTE_CONSONANTS : PALETTE_VOWELS;
+  const consonants = useMemo(
+    () => paletteConsonants(inventory),
+    [inventory],
+  );
+  const vowels = useMemo(() => paletteVowels(inventory), [inventory]);
+  const list = activeTab === "consonants" ? consonants : vowels;
 
   return (
     <div className="rounded-(--control-radius) border border-border bg-background p-3">
@@ -40,7 +50,7 @@ export function PhonemePickerPalette({
             ].join(" ")}
             onClick={() => setActiveTab("consonants")}
           >
-            Consonants ({PALETTE_CONSONANTS.length})
+            Consonants ({consonants.length})
           </button>
           <button
             type="button"
@@ -52,7 +62,7 @@ export function PhonemePickerPalette({
             ].join(" ")}
             onClick={() => setActiveTab("vowels")}
           >
-            Vowels ({PALETTE_VOWELS.length})
+            Vowels ({vowels.length})
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import type { PhonemeWord } from "@/data/phonemes";
+import type { PhonemeWord } from "@/lib/phoneme-types";
 import { ActivityPreviewShell } from "@/components/shared/ActivityPreviewShell";
 import type { WordSearchPuzzle } from "@/lib/word-search";
 import { WordSearchGame } from "./WordSearchGame";

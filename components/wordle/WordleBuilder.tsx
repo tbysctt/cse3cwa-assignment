@@ -6,14 +6,13 @@ import { BuilderLayout } from "@/components/shared/BuilderLayout";
 import { SavedActivitiesPanel } from "@/components/shared/SavedActivitiesPanel";
 import { WordleActivityPreview } from "@/components/wordle/WordleActivityPreview";
 import { WordleConfigForm } from "@/components/wordle/WordleConfigForm";
-import {
-  HCE_PHONEME_INVENTORY,
-  WORDLE_TARGET,
-  type Phoneme,
-  type PhonemeLength,
-  type PhonemeWord,
-  wordsForLength,
-} from "@/data/phonemes";
+import type {
+  KeyboardSlot,
+  Phoneme,
+  PhonemeLength,
+  PhonemeWord,
+} from "@/lib/phoneme-types";
+import { wordsForLength } from "@/lib/phoneme-types";
 import { useSavedActivities } from "@/hooks/useSavedActivities";
 import { type Difficulty } from "@/lib/activity";
 import {
@@ -55,16 +54,31 @@ function draftSignature(parts: {
   });
 }
 
-export function WordleBuilder() {
+function firstWordOfLength(
+  corpus: PhonemeWord[],
+  length: PhonemeLength,
+): PhonemeWord | null {
+  return wordsForLength(corpus, length)[0] ?? null;
+}
+
+export function WordleBuilder({
+  inventory: baseInventory,
+  keyboardRows,
+  corpus,
+}: {
+  inventory: Phoneme[];
+  keyboardRows: KeyboardSlot[][];
+  corpus: PhonemeWord[];
+}) {
+  const initialTarget = firstWordOfLength(corpus, 3);
+
   const [mode, setMode] = useState<"corpus" | "custom">("corpus");
-  const [length, setLength] = useState<PhonemeLength>(
-    WORDLE_TARGET.phonemes.length as PhonemeLength,
-  );
-  const [wordId, setWordId] = useState(WORDLE_TARGET.id);
+  const [length, setLength] = useState<PhonemeLength>(3);
+  const [wordId, setWordId] = useState(initialTarget?.id ?? "");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [customEnglish, setCustomEnglish] = useState("cat");
   const [customPhonemes, setCustomPhonemes] = useState<Phoneme[]>(() =>
-    parsePhonemeSequence("/k/ /æ/ /t/"),
+    parsePhonemeSequence("/k/ /æ/ /t/", baseInventory),
   );
   const [activityName, setActivityName] = useState("");
   const [storedMaxAttempts, setStoredMaxAttempts] = useState<number | null>(
@@ -72,10 +86,13 @@ export function WordleBuilder() {
   );
   const [storedShowHints, setStoredShowHints] = useState<boolean | null>(null);
 
-  const lengthWords = useMemo(() => wordsForLength(length), [length]);
+  const lengthWords = useMemo(
+    () => wordsForLength(corpus, length),
+    [corpus, length],
+  );
 
-  const corpusTargetWord = useMemo<PhonemeWord>(() => {
-    return lengthWords.find((entry) => entry.id === wordId) ?? lengthWords[0];
+  const corpusTargetWord = useMemo<PhonemeWord | null>(() => {
+    return lengthWords.find((entry) => entry.id === wordId) ?? lengthWords[0] ?? null;
   }, [lengthWords, wordId]);
 
   const customValidation = useMemo(
@@ -95,9 +112,9 @@ export function WordleBuilder() {
   const showHints = storedShowHints ?? preset.showHints;
 
   const inventory = useMemo(() => {
-    if (!targetWord) return HCE_PHONEME_INVENTORY;
-    return inventoryForTarget(targetWord);
-  }, [targetWord]);
+    if (!targetWord) return baseInventory;
+    return inventoryForTarget(targetWord, baseInventory);
+  }, [targetWord, baseInventory]);
 
   const canDraftGenerate = Boolean(
     targetWord && targetWord.phonemes.length > 0,
@@ -162,12 +179,20 @@ export function WordleBuilder() {
       html: generateWordleHtml({
         target: targetWord,
         inventory,
+        keyboardRows,
         maxAttempts,
         difficulty,
         showHints,
       }),
     };
-  }, [targetWord, inventory, maxAttempts, difficulty, showHints]);
+  }, [
+    targetWord,
+    inventory,
+    keyboardRows,
+    maxAttempts,
+    difficulty,
+    showHints,
+  ]);
 
   const saved = useSavedActivities({
     activityType: "wordle",
@@ -184,7 +209,7 @@ export function WordleBuilder() {
 
   function handleLengthChange(next: PhonemeLength) {
     setLength(next);
-    const nextWords = wordsForLength(next);
+    const nextWords = wordsForLength(corpus, next);
     setWordId(nextWords[0]?.id ?? "");
   }
 
@@ -221,9 +246,10 @@ export function WordleBuilder() {
             onModeChange={setMode}
             length={length}
             onLengthChange={handleLengthChange}
-            wordId={corpusTargetWord.id}
+            wordId={corpusTargetWord?.id ?? ""}
             onWordIdChange={setWordId}
             lengthWords={lengthWords}
+            inventory={baseInventory}
             customEnglish={customEnglish}
             onCustomEnglishChange={setCustomEnglish}
             customPhonemes={customPhonemes}
@@ -247,6 +273,7 @@ export function WordleBuilder() {
         <WordleActivityPreview
           target={targetWord}
           inventory={inventory}
+          keyboardRows={keyboardRows}
           maxAttempts={maxAttempts}
           showHints={showHints}
         />

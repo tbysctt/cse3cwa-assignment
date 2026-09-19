@@ -5,8 +5,8 @@ import { WordSearchGame } from "@/components/word-search/WordSearchGame";
 import { PhonemeKeyboard } from "@/components/wordle/PhonemeKeyboard";
 import { WordleConfigForm } from "@/components/wordle/WordleConfigForm";
 import { WordleGame } from "@/components/wordle/WordleGame";
-import { HCE_WORDS_4, HCE_WORDS_5, wordsForLength } from "@/data/hce-corpus";
-import { HCE_KEYBOARD_ROWS, HCE_PHONEME_INVENTORY } from "@/data/hce-keyboard";
+import { HCE_WORDS_4, HCE_WORDS_5, wordsForLength } from "@/data/phonemes";
+import { HCE_KEYBOARD_ROWS, HCE_PHONEME_INVENTORY } from "@/data/phonemes";
 import {
   PHONEME_INVENTORY,
   WORDLE_TARGET,
@@ -23,6 +23,7 @@ describe("PhonemeKeyboard", () => {
     render(
       <PhonemeKeyboard
         inventory={HCE_PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         showHint={false}
         onKeyPress={() => undefined}
       />,
@@ -60,6 +61,7 @@ describe("Wordle components", () => {
       <WordleGame
         target={WORDLE_TARGET}
         inventory={PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         maxAttempts={2}
         showHints={false}
       />,
@@ -85,6 +87,7 @@ describe("Wordle components", () => {
         key={four.id}
         target={four}
         inventory={PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         maxAttempts={2}
         showHints={false}
       />,
@@ -104,6 +107,7 @@ describe("Wordle components", () => {
         key={five.id}
         target={five}
         inventory={PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         maxAttempts={2}
         showHints={false}
       />,
@@ -122,6 +126,7 @@ describe("Wordle components", () => {
       <WordleGame
         target={WORDLE_TARGET}
         inventory={PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         maxAttempts={2}
         showHints
       />,
@@ -138,6 +143,7 @@ describe("Wordle components", () => {
         <WordleGame
           target={WORDLE_TARGET}
           inventory={PHONEME_INVENTORY}
+          keyboardRows={HCE_KEYBOARD_ROWS}
           maxAttempts={2}
           showHints={false}
         />

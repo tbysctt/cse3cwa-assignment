@@ -1,3 +1,4 @@
+import { TEST_BUILDER_PROPS, TEST_WORD_SEARCH_PROPS } from "./fixtures";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -25,7 +26,7 @@ describe("Custom input builder flows", () => {
 
   it("creates a custom Wordle activity, previews it, and downloads standalone HTML", async () => {
     const user = userEvent.setup();
-    render(<WordleBuilder />);
+    render(<WordleBuilder {...TEST_BUILDER_PROPS} />);
 
     // Switch to custom word mode
     const customModeBtn = screen.getByRole("button", {
@@ -60,7 +61,7 @@ describe("Custom input builder flows", () => {
 
   it("handles custom phoneme palette appending and error states in Wordle", async () => {
     const user = userEvent.setup();
-    render(<WordleBuilder />);
+    render(<WordleBuilder {...TEST_BUILDER_PROPS} />);
 
     await user.click(screen.getByRole("button", { name: "Custom word entry" }));
     const englishInput = screen.getByRole("textbox", {
@@ -87,7 +88,7 @@ describe("Custom input builder flows", () => {
 
   it("creates a custom Word Search activity, validates grid constraints, and exports HTML", async () => {
     const user = userEvent.setup();
-    render(<WordSearchBuilder />);
+    render(<WordSearchBuilder {...TEST_WORD_SEARCH_PROPS} />);
 
     // Switch to custom words mode
     const customModeBtn = screen.getByRole("button", {
@@ -120,7 +121,7 @@ describe("Custom input builder flows", () => {
 
   it("validates oversize custom words against grid dimensions in Word Search", async () => {
     const user = userEvent.setup();
-    render(<WordSearchBuilder />);
+    render(<WordSearchBuilder {...TEST_WORD_SEARCH_PROPS} />);
 
     await user.click(
       screen.getByRole("button", { name: "Custom words (5 words)" }),

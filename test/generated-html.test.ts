@@ -1,10 +1,10 @@
 import { JSDOM } from "jsdom";
 import { describe, expect, it, vi } from "vitest";
-import { HCE_WORDS_4, HCE_WORDS_5 } from "@/data/hce-corpus";
+import { HCE_WORDS_4, HCE_WORDS_5 } from "@/data/phonemes";
 import {
   HCE_KEYBOARD_ROWS,
   HCE_PHONEME_INVENTORY,
-} from "@/data/hce-keyboard";
+} from "@/data/phonemes";
 import {
   PHONEME_INVENTORY,
   WORDLE_TARGET,
@@ -39,6 +39,7 @@ describe("standalone activity generators", () => {
       generateWordleHtml({
         target: { ...WORDLE_TARGET, phonemes: [] },
         inventory: PHONEME_INVENTORY,
+        keyboardRows: HCE_KEYBOARD_ROWS,
         maxAttempts: 6,
         difficulty: "medium",
         showHints: true,
@@ -49,6 +50,7 @@ describe("standalone activity generators", () => {
       generateWordleHtml({
         target: WORDLE_TARGET,
         inventory: PHONEME_INVENTORY,
+        keyboardRows: HCE_KEYBOARD_ROWS,
         maxAttempts: Number.POSITIVE_INFINITY,
         difficulty: "medium",
         showHints: true,
@@ -65,6 +67,7 @@ describe("standalone activity generators", () => {
     const html = generateWordleHtml({
       target: { id: "hostile", english: "<b>answer</b>", phonemes: [hostile] },
       inventory: [hostile],
+      keyboardRows: HCE_KEYBOARD_ROWS,
       maxAttempts: 1,
       difficulty: "hard",
       showHints: true,
@@ -106,6 +109,7 @@ describe("standalone activity generators", () => {
     const html = generateWordleHtml({
       target: WORDLE_TARGET,
       inventory: HCE_PHONEME_INVENTORY,
+      keyboardRows: HCE_KEYBOARD_ROWS,
       maxAttempts: 2,
       difficulty: "medium",
       showHints: false,
@@ -136,6 +140,7 @@ describe("standalone activity generators", () => {
     const fourHtml = generateWordleHtml({
       target: four,
       inventory: HCE_PHONEME_INVENTORY,
+      keyboardRows: HCE_KEYBOARD_ROWS,
       maxAttempts: 1,
       difficulty: "hard",
       showHints: false,
@@ -160,6 +165,7 @@ describe("standalone activity generators", () => {
     const fiveHtml = generateWordleHtml({
       target: five,
       inventory: HCE_PHONEME_INVENTORY,
+      keyboardRows: HCE_KEYBOARD_ROWS,
       maxAttempts: 1,
       difficulty: "hard",
       showHints: false,
