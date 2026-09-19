@@ -68,7 +68,15 @@ npm test
 
 ### Docker
 
-`docker compose up --build` starts Postgres and the Next.js app. The container entrypoint runs `scripts/migrate.mjs` before `node server.js` so the schema is applied automatically.
+`docker compose up --build` starts Postgres, pgAdmin, and the Next.js app. The app container entrypoint runs `scripts/migrate.mjs` before `node server.js` so the schema is applied automatically.
+
+**pgAdmin** (browse tables and data):
+
+- URL: http://localhost:5050
+- Login: `admin@example.com` / `admin`
+- Open the pre-registered **Phoneme Activity Builder** server and connect with DB password `cse3cwa`
+
+To run only the database tooling: `docker compose up -d db pgadmin`.
 
 ## Persistent Interface Preferences
 
