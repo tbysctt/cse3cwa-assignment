@@ -15,8 +15,7 @@ const inputClass =
 
 export function WordSearchConfigForm({
   wordIds,
-  words,
-  corpus = [],
+  words = [],
   onWordIdChange,
   difficulty,
   onDifficultyChange,
@@ -30,8 +29,7 @@ export function WordSearchConfigForm({
   onSaveAsNew,
 }: {
   wordIds: string[];
-  words: PhonemeWord[];
-  corpus?: PhonemeWord[];
+  words?: PhonemeWord[];
   onWordIdChange: (index: number, nextId: string) => void;
   difficulty: Difficulty;
   onDifficultyChange: (next: Difficulty) => void;
@@ -66,9 +64,7 @@ export function WordSearchConfigForm({
             aria-label="Word search bank picks"
           >
             {wordIds.map((wordId, index) => {
-              const selected =
-                words.find((word) => word.id === wordId) ??
-                corpus.find((word) => word.id === wordId);
+              const selected = words.find((word) => word.id === wordId);
               const takenElsewhere = new Set(
                 wordIds.filter((_, i) => i !== index),
               );
@@ -87,12 +83,12 @@ export function WordSearchConfigForm({
                     onChange={(event) =>
                       onWordIdChange(index, event.target.value)
                     }
-                    disabled={corpus.length === 0}
+                    disabled={words.length === 0}
                   >
-                    {corpus.length === 0 ? (
+                    {words.length === 0 ? (
                       <option value="">No words in the bank</option>
                     ) : (
-                      corpus.map((entry) => (
+                      words.map((entry) => (
                         <option
                           key={entry.id}
                           value={entry.id}

@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1789718805669,
-      "tag": "0000_bitter_mantis",
+      "when": 1789985059399,
+      "tag": "0000_init_words_schema",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1789821943460,
-      "tag": "0001_ancient_scalphunter",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1789823000000,
-      "tag": "0002_seed_hce",
+      "when": 1789985059400,
+      "tag": "0001_seed_hce",
       "breakpoints": true
     }
   ]

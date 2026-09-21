@@ -3,18 +3,18 @@ import { describe, expect, it, vi } from "vitest";
 import { WordBankPageClient } from "@/components/word-bank/WordBankPageClient";
 import { TEST_BUILDER_PROPS } from "./fixtures";
 
-vi.mock("@/app/actions/corpus", () => ({
-  createCorpusWordAction: vi.fn(),
-  updateCorpusWordAction: vi.fn(),
-  deleteCorpusWordAction: vi.fn(),
-  listCorpusWordsAction: vi.fn(),
+vi.mock("@/app/actions/words", () => ({
+  createWordAction: vi.fn(),
+  updateWordAction: vi.fn(),
+  deleteWordAction: vi.fn(),
+  listWordsAction: vi.fn(),
 }));
 
 describe("Word bank page", () => {
   it("renders the managed word bank list", () => {
     render(
       <WordBankPageClient
-        initialCorpus={TEST_BUILDER_PROPS.corpus}
+        initialWords={TEST_BUILDER_PROPS.words}
         inventory={TEST_BUILDER_PROPS.inventory}
       />,
     );

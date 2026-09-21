@@ -13,7 +13,7 @@ import {
 const inputClass =
   "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
 
-export type CorpusWordEditorProps = {
+export type WordBankEditorProps = {
   open: boolean;
   title: string;
   inventory: Phoneme[];
@@ -27,7 +27,7 @@ export type CorpusWordEditorProps = {
   }) => void;
 };
 
-function CorpusWordEditorForm({
+function WordBankEditorForm({
   title,
   inventory,
   initialWord,
@@ -35,7 +35,7 @@ function CorpusWordEditorForm({
   error = null,
   onCancel,
   onConfirm,
-}: Omit<CorpusWordEditorProps, "open">) {
+}: Omit<WordBankEditorProps, "open">) {
   const titleId = useId();
   const [english, setEnglish] = useState(initialWord?.english ?? "");
   const [phonemes, setPhonemes] = useState<Phoneme[]>(
@@ -213,10 +213,10 @@ function CorpusWordEditorForm({
   );
 }
 
-export function CorpusWordEditor(props: CorpusWordEditorProps) {
+export function WordBankEditor(props: WordBankEditorProps) {
   if (!props.open) return null;
   return (
-    <CorpusWordEditorForm
+    <WordBankEditorForm
       key={props.initialWord?.id ?? "new-word"}
       {...props}
     />

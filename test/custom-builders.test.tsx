@@ -20,8 +20,8 @@ vi.mock("@/app/actions/activities", () => ({
   generateStoredActivityHtmlAction: vi.fn(),
 }));
 
-vi.mock("@/app/actions/corpus", () => ({
-  createCorpusWordAction: vi.fn(async (input) => ({
+vi.mock("@/app/actions/words", () => ({
+  createWordAction: vi.fn(async (input) => ({
     ok: true,
     data: {
       id: input.english.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
@@ -29,22 +29,22 @@ vi.mock("@/app/actions/corpus", () => ({
       phonemes: input.phonemes,
     },
   })),
-  updateCorpusWordAction: vi.fn(),
-  deleteCorpusWordAction: vi.fn(async (id) => ({ ok: true, data: { id } })),
-  listCorpusWordsAction: vi.fn(),
+  updateWordAction: vi.fn(),
+  deleteWordAction: vi.fn(async (id) => ({ ok: true, data: { id } })),
+  listWordsAction: vi.fn(),
 }));
 
-import { createCorpusWordAction } from "@/app/actions/corpus";
+import { createWordAction } from "@/app/actions/words";
 
 describe("Word bank builder flows", () => {
   beforeEach(() => {
     vi.mocked(downloadTextFile).mockClear();
-    vi.mocked(createCorpusWordAction).mockClear();
+    vi.mocked(createWordAction).mockClear();
   });
 
   it("selects a bank word for Wordle and downloads HTML", async () => {
     const user = userEvent.setup();
-    const firstThree = wordsForLength(TEST_BUILDER_PROPS.corpus, 3)[0]!;
+    const firstThree = wordsForLength(TEST_BUILDER_PROPS.words, 3)[0]!;
     render(<WordleBuilder {...TEST_BUILDER_PROPS} />);
 
     expect(screen.getByRole("combobox", { name: "Target word" })).toHaveValue(
@@ -94,7 +94,7 @@ describe("Word bank builder flows", () => {
     await user.click(
       within(editorDialog).getByRole("button", { name: "Save word" }),
     );
-    expect(createCorpusWordAction).toHaveBeenCalled();
+    expect(createWordAction).toHaveBeenCalled();
   });
 
   it("picks five bank words for Word Search and exports HTML", async () => {

@@ -1,4 +1,4 @@
-import { listCorpusWords, listPhonemeInventory } from "@/dal";
+import { listWords, listPhonemeInventory } from "@/dal";
 import { WordBankPageClient } from "@/components/word-bank/WordBankPageClient";
 import type { Metadata } from "next";
 
@@ -7,9 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default async function WordBankPage() {
-  const [inventory, corpus] = await Promise.all([
+  const [inventory, words] = await Promise.all([
     listPhonemeInventory(),
-    listCorpusWords(),
+    listWords(),
   ]);
 
   return (
@@ -21,7 +21,7 @@ export default async function WordBankPage() {
           Search activities pick targets from this list.
         </p>
       </header>
-      <WordBankPageClient initialCorpus={corpus} inventory={inventory} />
+      <WordBankPageClient initialWords={words} inventory={inventory} />
     </div>
   );
 }

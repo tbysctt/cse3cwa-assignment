@@ -60,7 +60,7 @@ npm run dev
 
 `GET /health` returns **200** `{ "status": "ok" }` when Postgres accepts a DAL ping (`SELECT 1`), or **503** `{ "status": "unhealthy" }` if the database is unreachable.
 
-Migrations also seed the shared **HCE reference data** (43 phonemes, keyboard layout, 90 corpus words) into `phonemes`, `keyboard_slots`, `corpus_words`, and `corpus_word_phonemes`. Builder pages load that inventory from the DAL—there are no hard-coded runtime defaults. The seed SQL is generated from `data/` fixtures via `node scripts/generate-hce-seed.mjs` (writes `drizzle/0002_seed_hce.sql`).
+Migrations also seed the shared **HCE reference data** (43 phonemes, keyboard layout, 90 bank words) into `phonemes`, `keyboard_slots`, `words`, and `word_phonemes`. Builder pages load that inventory from the DAL—there are no hard-coded runtime defaults. The seed SQL is generated from `data/` fixtures via `node scripts/generate-hce-seed.mjs` (writes `drizzle/0001_seed_hce.sql`). After a schema reset, wipe the Postgres volume and run `npm run db:migrate`.
 
 DAL CRUD integration tests in `test/activity-repository.test.ts` run only when `DATABASE_URL` is set (they are skipped otherwise). Start Postgres and export the URL before `npm test` to include them:
 

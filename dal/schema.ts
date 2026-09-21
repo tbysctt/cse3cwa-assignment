@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   integer,
   pgEnum,
   pgTable,
@@ -33,8 +34,9 @@ export const activityConfigurations = pgTable("activity_configurations", {
     .notNull(),
 });
 
-export const words = pgTable(
-  "words",
+/** Frozen word copies owned by a saved activity (not live bank FKs). */
+export const activityWords = pgTable(
+  "activity_words",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     activityId: uuid("activity_id")
@@ -44,17 +46,21 @@ export const words = pgTable(
     position: integer("position").notNull(),
   },
   (table) => [
-    unique("words_activity_position_uid").on(table.activityId, table.position),
+    unique("activity_words_activity_position_uid").on(
+      table.activityId,
+      table.position,
+    ),
   ],
 );
 
-export const wordPhonemes = pgTable(
-  "word_phonemes",
+/** Denormalized phoneme rows as of activity save time. */
+export const activityWordPhonemes = pgTable(
+  "activity_word_phonemes",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    wordId: uuid("word_id")
+    activityWordId: uuid("activity_word_id")
       .notNull()
-      .references(() => words.id, { onDelete: "cascade" }),
+      .references(() => activityWords.id, { onDelete: "cascade" }),
     position: integer("position").notNull(),
     /** IPA may be multi-character (e.g. tʃ, iː, æɪ). */
     ipa: text("ipa").notNull(),
@@ -62,11 +68,14 @@ export const wordPhonemes = pgTable(
     example: text("example").notNull(),
   },
   (table) => [
-    unique("word_phonemes_word_position_uid").on(table.wordId, table.position),
+    unique("activity_word_phonemes_word_position_uid").on(
+      table.activityWordId,
+      table.position,
+    ),
   ],
 );
 
-/** Shared HCE phoneme catalog (keyboard + corpus resolution). */
+/** Shared HCE phoneme catalog (keyboard + word-bank resolution). */
 export const phonemes = pgTable("phonemes", {
   id: uuid("id").defaultRandom().primaryKey(),
   ipa: text("ipa").notNull().unique(),
@@ -88,59 +97,71 @@ export const keyboardSlots = pgTable(
   (table) => [unique("keyboard_slots_row_col_uid").on(table.row, table.col)],
 );
 
-/** Reference HCE corpus for builder pickers. */
-export const corpusWords = pgTable("corpus_words", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  slug: text("slug").notNull().unique(),
-  english: text("english").notNull(),
-  phonemeLength: integer("phoneme_length").notNull(),
-});
-
-export const corpusWordPhonemes = pgTable(
-  "corpus_word_phonemes",
+/** Shared word bank for builder pickers and CRUD. */
+export const words = pgTable(
+  "words",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    corpusWordId: uuid("corpus_word_id")
+    slug: text("slug").notNull().unique(),
+    english: text("english").notNull(),
+    phonemeLength: integer("phoneme_length").notNull(),
+  },
+  (table) => [
+    check(
+      "words_phoneme_length_check",
+      sql`${table.phonemeLength} in (3, 4, 5)`,
+    ),
+  ],
+);
+
+export const wordPhonemes = pgTable(
+  "word_phonemes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    wordId: uuid("word_id")
       .notNull()
-      .references(() => corpusWords.id, { onDelete: "cascade" }),
+      .references(() => words.id, { onDelete: "cascade" }),
     position: integer("position").notNull(),
     phonemeId: uuid("phoneme_id")
       .notNull()
       .references(() => phonemes.id, { onDelete: "restrict" }),
   },
   (table) => [
-    unique("corpus_word_phonemes_word_position_uid").on(
-      table.corpusWordId,
-      table.position,
-    ),
+    unique("word_phonemes_word_position_uid").on(table.wordId, table.position),
   ],
 );
 
 export const activityConfigurationsRelations = relations(
   activityConfigurations,
   ({ many }) => ({
-    words: many(words),
+    words: many(activityWords),
   }),
 );
 
-export const wordsRelations = relations(words, ({ one, many }) => ({
-  activity: one(activityConfigurations, {
-    fields: [words.activityId],
-    references: [activityConfigurations.id],
+export const activityWordsRelations = relations(
+  activityWords,
+  ({ one, many }) => ({
+    activity: one(activityConfigurations, {
+      fields: [activityWords.activityId],
+      references: [activityConfigurations.id],
+    }),
+    phonemes: many(activityWordPhonemes),
   }),
-  phonemes: many(wordPhonemes),
-}));
+);
 
-export const wordPhonemesRelations = relations(wordPhonemes, ({ one }) => ({
-  word: one(words, {
-    fields: [wordPhonemes.wordId],
-    references: [words.id],
+export const activityWordPhonemesRelations = relations(
+  activityWordPhonemes,
+  ({ one }) => ({
+    word: one(activityWords, {
+      fields: [activityWordPhonemes.activityWordId],
+      references: [activityWords.id],
+    }),
   }),
-}));
+);
 
 export const phonemesRelations = relations(phonemes, ({ many }) => ({
   keyboardSlots: many(keyboardSlots),
-  corpusWordPhonemes: many(corpusWordPhonemes),
+  wordPhonemes: many(wordPhonemes),
 }));
 
 export const keyboardSlotsRelations = relations(keyboardSlots, ({ one }) => ({
@@ -150,20 +171,17 @@ export const keyboardSlotsRelations = relations(keyboardSlots, ({ one }) => ({
   }),
 }));
 
-export const corpusWordsRelations = relations(corpusWords, ({ many }) => ({
-  phonemes: many(corpusWordPhonemes),
+export const wordsRelations = relations(words, ({ many }) => ({
+  phonemes: many(wordPhonemes),
 }));
 
-export const corpusWordPhonemesRelations = relations(
-  corpusWordPhonemes,
-  ({ one }) => ({
-    word: one(corpusWords, {
-      fields: [corpusWordPhonemes.corpusWordId],
-      references: [corpusWords.id],
-    }),
-    phoneme: one(phonemes, {
-      fields: [corpusWordPhonemes.phonemeId],
-      references: [phonemes.id],
-    }),
+export const wordPhonemesRelations = relations(wordPhonemes, ({ one }) => ({
+  word: one(words, {
+    fields: [wordPhonemes.wordId],
+    references: [words.id],
   }),
-);
+  phoneme: one(phonemes, {
+    fields: [wordPhonemes.phonemeId],
+    references: [phonemes.id],
+  }),
+}));

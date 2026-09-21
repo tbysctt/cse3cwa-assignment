@@ -55,17 +55,17 @@ export function resolvePhonemes(
 }
 
 export function wordsForLength(
-  corpus: PhonemeWord[],
+  words: PhonemeWord[],
   length: PhonemeLength,
 ): PhonemeWord[] {
-  return corpus.filter((word) => word.phonemes.length === length);
+  return words.filter((word) => word.phonemes.length === length);
 }
 
-export function findCorpusWord(
-  corpus: PhonemeWord[],
+export function findWord(
+  words: PhonemeWord[],
   id: string,
 ): PhonemeWord | undefined {
-  return corpus.find((entry) => entry.id === id);
+  return words.find((entry) => entry.id === id);
 }
 
 export function allFillerPhonemes(

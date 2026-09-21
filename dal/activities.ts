@@ -5,8 +5,8 @@ import { DalNotFoundError } from "./errors";
 import { mapActivity, mapActivitySummary } from "./mappers";
 import {
   activityConfigurations,
-  wordPhonemes,
-  words,
+  activityWordPhonemes,
+  activityWords,
 } from "./schema";
 import type {
   ActivityConfiguration,
@@ -33,22 +33,22 @@ async function insertWords(
 ) {
   for (const [wordIndex, word] of wordInputs.entries()) {
     const [insertedWord] = await tx
-      .insert(words)
+      .insert(activityWords)
       .values({
         activityId,
         english: word.english,
         position: wordIndex,
       })
-      .returning({ id: words.id });
+      .returning({ id: activityWords.id });
 
     if (!insertedWord) {
       throw new Error("Failed to insert word.");
     }
 
     if (word.phonemes.length > 0) {
-      await tx.insert(wordPhonemes).values(
+      await tx.insert(activityWordPhonemes).values(
         word.phonemes.map((phoneme, phonemeIndex) => ({
-          wordId: insertedWord.id,
+          activityWordId: insertedWord.id,
           position: phonemeIndex,
           ipa: phoneme.ipa,
           grapheme: phoneme.grapheme,
@@ -84,10 +84,10 @@ async function loadActivity(
     where: eq(activityConfigurations.id, id),
     with: {
       words: {
-        orderBy: [asc(words.position)],
+        orderBy: [asc(activityWords.position)],
         with: {
           phonemes: {
-            orderBy: [asc(wordPhonemes.position)],
+            orderBy: [asc(activityWordPhonemes.position)],
           },
         },
       },
@@ -152,10 +152,10 @@ export async function listActivities(
       seed: activityConfigurations.seed,
       createdAt: activityConfigurations.createdAt,
       updatedAt: activityConfigurations.updatedAt,
-      wordCount: count(words.id),
+      wordCount: count(activityWords.id),
     })
     .from(activityConfigurations)
-    .leftJoin(words, eq(words.activityId, activityConfigurations.id))
+    .leftJoin(activityWords, eq(activityWords.activityId, activityConfigurations.id))
     .where(
       filter.activityType
         ? eq(activityConfigurations.activityType, filter.activityType)
@@ -207,7 +207,7 @@ export async function updateActivity(
     }
 
     if (patch.words !== undefined) {
-      await tx.delete(words).where(eq(words.activityId, id));
+      await tx.delete(activityWords).where(eq(activityWords.activityId, id));
       await insertWords(tx, id, validated.words);
     }
   });

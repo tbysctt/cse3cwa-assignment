@@ -51,19 +51,19 @@ function draftSignature(parts: {
 }
 
 function firstWordOfLength(
-  corpus: PhonemeWord[],
+  words: PhonemeWord[],
   length: PhonemeLength,
 ): PhonemeWord | null {
-  return wordsForLength(corpus, length)[0] ?? null;
+  return wordsForLength(words, length)[0] ?? null;
 }
 
-function matchCorpusWord(
-  corpus: PhonemeWord[],
+function matchBankWord(
+  words: PhonemeWord[],
   word: PhonemeWord,
 ): PhonemeWord | null {
-  const byId = corpus.find((entry) => entry.id === word.id);
+  const byId = words.find((entry) => entry.id === word.id);
   if (byId) return byId;
-  const byEnglish = corpus.find(
+  const byEnglish = words.find(
     (entry) =>
       entry.english.toLowerCase() === word.english.toLowerCase() &&
       entry.phonemes.length === word.phonemes.length,
@@ -74,14 +74,14 @@ function matchCorpusWord(
 export function WordleBuilder({
   inventory: baseInventory,
   keyboardRows,
-  corpus: initialCorpus,
+  words: initialWords,
 }: {
   inventory: Phoneme[];
   keyboardRows: KeyboardSlot[][];
-  corpus: PhonemeWord[];
+  words: PhonemeWord[];
 }) {
-  const [corpus, setCorpus] = useState(initialCorpus);
-  const initialTarget = firstWordOfLength(corpus, 3);
+  const [words, setWords] = useState(initialWords);
+  const initialTarget = firstWordOfLength(words, 3);
 
   const [length, setLength] = useState<PhonemeLength>(3);
   const [wordId, setWordId] = useState(initialTarget?.id ?? "");
@@ -98,8 +98,8 @@ export function WordleBuilder({
   const [wordBankOpen, setWordBankOpen] = useState(false);
 
   const lengthWords = useMemo(
-    () => wordsForLength(corpus, length),
-    [corpus, length],
+    () => wordsForLength(words, length),
+    [words, length],
   );
 
   const targetWord = useMemo<PhonemeWord | null>(() => {
@@ -155,7 +155,7 @@ export function WordleBuilder({
       if (!word) {
         throw new Error("Saved Wordle activity has no target word.");
       }
-      const matched = matchCorpusWord(corpus, word);
+      const matched = matchBankWord(words, word);
       const effective = matched ?? word;
       setActivityName(activity.name);
       setDifficulty(activity.difficulty);
@@ -175,11 +175,11 @@ export function WordleBuilder({
         showHints: activity.showHints,
       });
     },
-    [corpus],
+    [words],
   );
 
   const resetDraft = useCallback(() => {
-    const nextTarget = firstWordOfLength(corpus, 3);
+    const nextTarget = firstWordOfLength(words, 3);
     setLength(3);
     setWordId(nextTarget?.id ?? "");
     setDifficulty("medium");
@@ -194,7 +194,7 @@ export function WordleBuilder({
       maxAttempts: DIFFICULTY_PRESETS.medium.maxAttempts,
       showHints: DIFFICULTY_PRESETS.medium.showHints,
     });
-  }, [corpus]);
+  }, [words]);
 
   const buildCreateInput = useCallback(
     (nameOverride?: string) => {
@@ -253,7 +253,7 @@ export function WordleBuilder({
   function handleLengthChange(next: PhonemeLength) {
     setLength(next);
     setLoadedFallback(null);
-    const nextWords = wordsForLength(corpus, next);
+    const nextWords = wordsForLength(words, next);
     setWordId(nextWords[0]?.id ?? "");
   }
 
@@ -263,8 +263,8 @@ export function WordleBuilder({
     setStoredShowHints(null);
   }
 
-  function handleCorpusChange(next: PhonemeWord[], selectId?: string) {
-    setCorpus(next);
+  function handleWordsChange(next: PhonemeWord[], selectId?: string) {
+    setWords(next);
     const preferred = selectId ?? wordId;
     if (preferred && next.some((word) => word.id === preferred)) {
       setWordId(preferred);
@@ -343,9 +343,9 @@ export function WordleBuilder({
       {saved.nameDialogNode}
       <WordBankModal
         open={wordBankOpen}
-        corpus={corpus}
+        words={words}
         inventory={baseInventory}
-        onCorpusChange={handleCorpusChange}
+        onWordsChange={handleWordsChange}
         onClose={() => setWordBankOpen(false)}
       />
     </>

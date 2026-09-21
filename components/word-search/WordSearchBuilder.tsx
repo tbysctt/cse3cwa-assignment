@@ -8,7 +8,7 @@ import { WordBankModal } from "@/components/shared/WordBankModal";
 import { WordSearchActivityPreview } from "@/components/word-search/WordSearchActivityPreview";
 import { WordSearchConfigForm } from "@/components/word-search/WordSearchConfigForm";
 import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
-import { findCorpusWord } from "@/lib/phoneme-types";
+import { findWord } from "@/lib/phoneme-types";
 import { useSavedActivities } from "@/hooks/useSavedActivities";
 import { activitySignature, type Difficulty } from "@/lib/activity";
 import {
@@ -49,14 +49,14 @@ function draftSignature(parts: {
   });
 }
 
-function matchCorpusWord(
-  corpus: PhonemeWord[],
+function matchBankWord(
+  bankWords: PhonemeWord[],
   word: PhonemeWord,
 ): PhonemeWord | null {
-  const byId = findCorpusWord(corpus, word.id);
+  const byId = findWord(bankWords, word.id);
   if (byId) return byId;
   return (
-    corpus.find(
+    bankWords.find(
       (entry) =>
         entry.english.toLowerCase() === word.english.toLowerCase() &&
         entry.phonemes.length === word.phonemes.length,
@@ -66,21 +66,21 @@ function matchCorpusWord(
 
 export function WordSearchBuilder({
   inventory,
-  corpus: initialCorpus,
+  words: initialBankWords,
 }: {
   inventory: Phoneme[];
-  corpus: PhonemeWord[];
+  words: PhonemeWord[];
 }) {
-  const [corpus, setCorpus] = useState(initialCorpus);
+  const [bankWords, setBankWords] = useState(initialBankWords);
 
-  const initialCorpusIds = corpus
+  const initialWordIds = bankWords
     .slice(0, REQUIRED_WORD_COUNT)
     .map((word) => word.id);
 
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [wordIds, setWordIds] = useState<string[]>(() => {
-    if (initialCorpusIds.length === REQUIRED_WORD_COUNT) {
-      return initialCorpusIds;
+    if (initialWordIds.length === REQUIRED_WORD_COUNT) {
+      return initialWordIds;
     }
     return Array.from({ length: REQUIRED_WORD_COUNT }, () => "");
   });
@@ -93,25 +93,30 @@ export function WordSearchBuilder({
   const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
   const showHints = storedShowHints ?? DIFFICULTY_PRESETS[difficulty].showHints;
 
-  const words = useMemo<PhonemeWord[]>(() => {
+  const selectedWords = useMemo<PhonemeWord[]>(() => {
     return wordIds.flatMap((id, index) => {
-      const match = findCorpusWord(corpus, id);
+      const match = findWord(bankWords, id);
       if (match) return [match];
       const fallback = loadedFallbacks[index];
       return fallback && fallback.id === id ? [fallback] : [];
     });
-  }, [wordIds, corpus, loadedFallbacks]);
+  }, [wordIds, bankWords, loadedFallbacks]);
 
-  const wordsSignature = useMemo(() => activitySignature(words), [words]);
+  const wordsSignature = useMemo(
+    () => activitySignature(selectedWords),
+    [selectedWords],
+  );
 
   const puzzleResult = useMemo<{
     puzzle: WordSearchPuzzle | null;
     error: string | null;
   }>(() => {
-    if (words.length !== REQUIRED_WORD_COUNT) {
+    if (selectedWords.length !== REQUIRED_WORD_COUNT) {
       return { puzzle: null, error: null };
     }
-    if (new Set(words.map((word) => word.id)).size !== REQUIRED_WORD_COUNT) {
+    if (
+      new Set(selectedWords.map((word) => word.id)).size !== REQUIRED_WORD_COUNT
+    ) {
       return {
         puzzle: null,
         error: "Choose five different words.",
@@ -119,7 +124,7 @@ export function WordSearchBuilder({
     }
     try {
       return {
-        puzzle: generateWordSearch(words, gridSize, seed, inventory),
+        puzzle: generateWordSearch(selectedWords, gridSize, seed, inventory),
         error: null,
       };
     } catch (error) {
@@ -131,22 +136,22 @@ export function WordSearchBuilder({
             : "The word search could not be generated.",
       };
     }
-  }, [words, gridSize, seed, inventory]);
+  }, [selectedWords, gridSize, seed, inventory]);
 
   const { puzzle } = puzzleResult;
   const canDraftGenerate =
-    puzzle !== null && words.length === REQUIRED_WORD_COUNT;
+    puzzle !== null && selectedWords.length === REQUIRED_WORD_COUNT;
 
   const signature = useMemo(
     () =>
       draftSignature({
         name: activityName,
         difficulty,
-        words,
+        words: selectedWords,
         showHints,
         seed,
       }),
-    [activityName, difficulty, words, showHints, seed],
+    [activityName, difficulty, selectedWords, showHints, seed],
   );
 
   const applyLoadedActivity = useCallback(
@@ -158,7 +163,9 @@ export function WordSearchBuilder({
         );
       }
       const nextSeed = activity.seed ?? DEFAULT_WORD_SEARCH_SEED;
-      const resolved = loadedWords.map((word) => matchCorpusWord(corpus, word));
+      const resolved = loadedWords.map((word) =>
+        matchBankWord(bankWords, word),
+      );
       const nextIds = loadedWords.map(
         (word, index) => resolved[index]?.id ?? `loaded-${index}-${word.id}`,
       );
@@ -186,16 +193,16 @@ export function WordSearchBuilder({
         seed: nextSeed,
       });
     },
-    [corpus],
+    [bankWords],
   );
 
   const resetDraft = useCallback(() => {
     const nextIds =
-      corpus.length >= REQUIRED_WORD_COUNT
-        ? corpus.slice(0, REQUIRED_WORD_COUNT).map((word) => word.id)
+      bankWords.length >= REQUIRED_WORD_COUNT
+        ? bankWords.slice(0, REQUIRED_WORD_COUNT).map((word) => word.id)
         : Array.from({ length: REQUIRED_WORD_COUNT }, () => "");
     const nextWords = nextIds.flatMap((id) => {
-      const match = findCorpusWord(corpus, id);
+      const match = findWord(bankWords, id);
       return match ? [match] : [];
     });
     setDifficulty("medium");
@@ -211,7 +218,7 @@ export function WordSearchBuilder({
       showHints: DIFFICULTY_PRESETS.medium.showHints,
       seed: DEFAULT_WORD_SEARCH_SEED,
     });
-  }, [corpus]);
+  }, [bankWords]);
 
   const buildCreateInput = useCallback(
     (nameOverride?: string) => {
@@ -223,10 +230,17 @@ export function WordSearchBuilder({
         difficulty,
         showHints,
         seed,
-        words,
+        words: selectedWords,
       });
     },
-    [activityName, canDraftGenerate, difficulty, showHints, seed, words],
+    [
+      activityName,
+      canDraftGenerate,
+      difficulty,
+      showHints,
+      seed,
+      selectedWords,
+    ],
   );
 
   const generateDraftHtml = useCallback(() => {
@@ -234,14 +248,14 @@ export function WordSearchBuilder({
     return {
       filename: "phoneme-word-search.html",
       html: generateWordSearchHtml({
-        words,
+        words: selectedWords,
         puzzle,
         seed,
         difficulty,
         showHints,
       }),
     };
-  }, [puzzle, canDraftGenerate, words, seed, difficulty, showHints]);
+  }, [puzzle, canDraftGenerate, selectedWords, seed, difficulty, showHints]);
 
   const saved = useSavedActivities({
     activityType: "word_search",
@@ -276,14 +290,10 @@ export function WordSearchBuilder({
     setStoredShowHints(null);
   }
 
-  function handleCorpusChange(next: PhonemeWord[], selectId?: string) {
-    setCorpus(next);
+  function handleWordsChange(next: PhonemeWord[], selectId?: string) {
+    setBankWords(next);
     setWordIds((prev) => {
       const mapped = prev.map((id) => {
-        if (selectId && id && !next.some((word) => word.id === id)) {
-          // Prefer newly saved id only if this slot lost its word and we have one selectId
-          return id;
-        }
         if (!id) return id;
         if (next.some((word) => word.id === id)) return id;
         return "";
@@ -337,8 +347,7 @@ export function WordSearchBuilder({
           <WordSearchConfigForm
             key={saved.formEpoch}
             wordIds={wordIds}
-            words={words}
-            corpus={corpus}
+            words={bankWords}
             onWordIdChange={handleWordIdChange}
             difficulty={difficulty}
             onDifficultyChange={handleDifficultyChange}
@@ -355,7 +364,7 @@ export function WordSearchBuilder({
         preview={
           <WordSearchActivityPreview
             puzzle={puzzle}
-            words={words}
+            words={selectedWords}
             showHints={showHints}
             puzzleKey={`${wordsSignature}|${difficulty}|${gridSize}|${seed}`}
             errorMessage={puzzleResult.error}
@@ -365,9 +374,9 @@ export function WordSearchBuilder({
       {saved.nameDialogNode}
       <WordBankModal
         open={wordBankOpen}
-        corpus={corpus}
+        words={bankWords}
         inventory={inventory}
-        onCorpusChange={handleCorpusChange}
+        onWordsChange={handleWordsChange}
         onClose={() => setWordBankOpen(false)}
       />
     </>

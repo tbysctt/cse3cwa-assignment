@@ -1,13 +1,13 @@
 "use server";
 
 import {
-  createCorpusWord,
-  deleteCorpusWord,
-  listCorpusWords,
-  updateCorpusWord,
+  createWord,
+  deleteWord,
+  listWords,
+  updateWord,
   DalNotFoundError,
   DalValidationError,
-  type CorpusWordInput,
+  type BankWordInput,
 } from "@/dal";
 import type { ActionResult } from "@/lib/activity-action-types";
 import type { PhonemeWord } from "@/lib/phoneme-types";
@@ -25,45 +25,43 @@ function toActionError(error: unknown): ActionResult<never> {
   return { ok: false, error: "Something went wrong." };
 }
 
-export async function listCorpusWordsAction(): Promise<
-  ActionResult<PhonemeWord[]>
-> {
+export async function listWordsAction(): Promise<ActionResult<PhonemeWord[]>> {
   try {
-    const words = await listCorpusWords();
+    const words = await listWords();
     return { ok: true, data: words };
   } catch (error) {
     return toActionError(error);
   }
 }
 
-export async function createCorpusWordAction(
-  input: CorpusWordInput,
+export async function createWordAction(
+  input: BankWordInput,
 ): Promise<ActionResult<PhonemeWord>> {
   try {
-    const word = await createCorpusWord(input);
+    const word = await createWord(input);
     return { ok: true, data: word };
   } catch (error) {
     return toActionError(error);
   }
 }
 
-export async function updateCorpusWordAction(
+export async function updateWordAction(
   slug: string,
-  input: CorpusWordInput,
+  input: BankWordInput,
 ): Promise<ActionResult<PhonemeWord>> {
   try {
-    const word = await updateCorpusWord(slug, input);
+    const word = await updateWord(slug, input);
     return { ok: true, data: word };
   } catch (error) {
     return toActionError(error);
   }
 }
 
-export async function deleteCorpusWordAction(
+export async function deleteWordAction(
   slug: string,
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    await deleteCorpusWord(slug);
+    await deleteWord(slug);
     return { ok: true, data: { id: slug } };
   } catch (error) {
     return toActionError(error);

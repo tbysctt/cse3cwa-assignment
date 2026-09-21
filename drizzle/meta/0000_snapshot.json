@@ -1,5 +1,5 @@
 {
-  "id": "8ac495bc-1867-47df-b5a1-87486816d2e9",
+  "id": "9a53c751-b099-4750-9b51-b6de7f246cdc",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -76,8 +76,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.word_phonemes": {
-      "name": "word_phonemes",
+    "public.activity_word_phonemes": {
+      "name": "activity_word_phonemes",
       "schema": "",
       "columns": {
         "id": {
@@ -87,8 +87,8 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "word_id": {
-          "name": "word_id",
+        "activity_word_id": {
+          "name": "activity_word_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -120,12 +120,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "word_phonemes_word_id_words_id_fk": {
-          "name": "word_phonemes_word_id_words_id_fk",
-          "tableFrom": "word_phonemes",
-          "tableTo": "words",
+        "activity_word_phonemes_activity_word_id_activity_words_id_fk": {
+          "name": "activity_word_phonemes_activity_word_id_activity_words_id_fk",
+          "tableFrom": "activity_word_phonemes",
+          "tableTo": "activity_words",
           "columnsFrom": [
-            "word_id"
+            "activity_word_id"
           ],
           "columnsTo": [
             "id"
@@ -136,11 +136,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "word_phonemes_word_position_uid": {
-          "name": "word_phonemes_word_position_uid",
+        "activity_word_phonemes_word_position_uid": {
+          "name": "activity_word_phonemes_word_position_uid",
           "nullsNotDistinct": false,
           "columns": [
-            "word_id",
+            "activity_word_id",
             "position"
           ]
         }
@@ -149,8 +149,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.words": {
-      "name": "words",
+    "public.activity_words": {
+      "name": "activity_words",
       "schema": "",
       "columns": {
         "id": {
@@ -181,9 +181,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "words_activity_id_activity_configurations_id_fk": {
-          "name": "words_activity_id_activity_configurations_id_fk",
-          "tableFrom": "words",
+        "activity_words_activity_id_activity_configurations_id_fk": {
+          "name": "activity_words_activity_id_activity_configurations_id_fk",
+          "tableFrom": "activity_words",
           "tableTo": "activity_configurations",
           "columnsFrom": [
             "activity_id"
@@ -197,8 +197,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "words_activity_position_uid": {
-          "name": "words_activity_position_uid",
+        "activity_words_activity_position_uid": {
+          "name": "activity_words_activity_position_uid",
           "nullsNotDistinct": false,
           "columns": [
             "activity_id",
@@ -208,6 +208,238 @@
       },
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.keyboard_slots": {
+      "name": "keyboard_slots",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "row": {
+          "name": "row",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "col": {
+          "name": "col",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phoneme_id": {
+          "name": "phoneme_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "keyboard_slots_phoneme_id_phonemes_id_fk": {
+          "name": "keyboard_slots_phoneme_id_phonemes_id_fk",
+          "tableFrom": "keyboard_slots",
+          "tableTo": "phonemes",
+          "columnsFrom": [
+            "phoneme_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "keyboard_slots_row_col_uid": {
+          "name": "keyboard_slots_row_col_uid",
+          "nullsNotDistinct": false,
+          "columns": [
+            "row",
+            "col"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.phonemes": {
+      "name": "phonemes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "ipa": {
+          "name": "ipa",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grapheme": {
+          "name": "grapheme",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "example": {
+          "name": "example",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "phonemes_ipa_unique": {
+          "name": "phonemes_ipa_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ipa"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.word_phonemes": {
+      "name": "word_phonemes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "word_id": {
+          "name": "word_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phoneme_id": {
+          "name": "phoneme_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "word_phonemes_word_id_words_id_fk": {
+          "name": "word_phonemes_word_id_words_id_fk",
+          "tableFrom": "word_phonemes",
+          "tableTo": "words",
+          "columnsFrom": [
+            "word_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "word_phonemes_phoneme_id_phonemes_id_fk": {
+          "name": "word_phonemes_phoneme_id_phonemes_id_fk",
+          "tableFrom": "word_phonemes",
+          "tableTo": "phonemes",
+          "columnsFrom": [
+            "phoneme_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "word_phonemes_word_position_uid": {
+          "name": "word_phonemes_word_position_uid",
+          "nullsNotDistinct": false,
+          "columns": [
+            "word_id",
+            "position"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.words": {
+      "name": "words",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "english": {
+          "name": "english",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phoneme_length": {
+          "name": "phoneme_length",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "words_slug_unique": {
+          "name": "words_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "words_phoneme_length_check": {
+          "name": "words_phoneme_length_check",
+          "value": "\"words\".\"phoneme_length\" in (3, 4, 5)"
+        }
+      },
       "isRLSEnabled": false
     }
   },

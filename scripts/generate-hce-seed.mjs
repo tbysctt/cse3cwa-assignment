@@ -1,5 +1,5 @@
 /**
- * One-off generator: writes drizzle/0002_seed_hce.sql from HCE reference arrays.
+ * One-off generator: writes drizzle/0001_seed_hce.sql from HCE reference arrays.
  * Run: node scripts/generate-hce-seed.mjs
  */
 import fs from "node:fs";
@@ -224,36 +224,35 @@ KEYBOARD_ROWS.forEach((row, rowIndex) => {
   });
 });
 
-/** @type {[number, [string, ...string[]][]][]} */
-const corpusGroups = [
+const wordGroups = [
   [3, WORDS_3],
   [4, WORDS_4],
   [5, WORDS_5],
 ];
 
-const corpusInserts = [];
-const corpusPhonemeInserts = [];
-for (const [length, words] of corpusGroups) {
-  for (const [english, ...ipas] of words) {
-    corpusInserts.push(
-      `INSERT INTO "corpus_words" ("slug", "english", "phoneme_length") VALUES (${sqlStr(english)}, ${sqlStr(english)}, ${length}) ON CONFLICT ("slug") DO NOTHING;`,
+const wordInserts = [];
+const wordPhonemeInserts = [];
+for (const [length, wordList] of wordGroups) {
+  for (const [english, ...ipas] of wordList) {
+    wordInserts.push(
+      `INSERT INTO "words" ("slug", "english", "phoneme_length") VALUES (${sqlStr(english)}, ${sqlStr(english)}, ${length}) ON CONFLICT ("slug") DO NOTHING;`,
     );
     ipas.forEach((ipa, position) => {
-      corpusPhonemeInserts.push(
-        `INSERT INTO "corpus_word_phonemes" ("corpus_word_id", "position", "phoneme_id") SELECT cw."id", ${position}, p."id" FROM "corpus_words" cw, "phonemes" p WHERE cw."slug" = ${sqlStr(english)} AND p."ipa" = ${sqlStr(ipa)} ON CONFLICT ("corpus_word_id", "position") DO NOTHING;`,
+      wordPhonemeInserts.push(
+        `INSERT INTO "word_phonemes" ("word_id", "position", "phoneme_id") SELECT w."id", ${position}, p."id" FROM "words" w, "phonemes" p WHERE w."slug" = ${sqlStr(english)} AND p."ipa" = ${sqlStr(ipa)} ON CONFLICT ("word_id", "position") DO NOTHING;`,
       );
     });
   }
 }
 
 const sql = sqlBreak([
-  "-- Seed HCE phoneme inventory, keyboard layout, and corpus words",
+  "-- Seed HCE phoneme inventory, keyboard layout, and word bank",
   ...phonemeInserts,
   ...keyboardInserts,
-  ...corpusInserts,
-  ...corpusPhonemeInserts,
+  ...wordInserts,
+  ...wordPhonemeInserts,
 ]);
 
-const outPath = path.join(__dirname, "..", "drizzle", "0002_seed_hce.sql");
+const outPath = path.join(__dirname, "..", "drizzle", "0001_seed_hce.sql");
 fs.writeFileSync(outPath, `${sql}\n`);
 console.log(`Wrote ${outPath}`);

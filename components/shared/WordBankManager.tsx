@@ -2,11 +2,11 @@
 
 import { useMemo, useState } from "react";
 import {
-  createCorpusWordAction,
-  deleteCorpusWordAction,
-  updateCorpusWordAction,
-} from "@/app/actions/corpus";
-import { CorpusWordEditor } from "@/components/shared/CorpusWordEditor";
+  createWordAction,
+  deleteWordAction,
+  updateWordAction,
+} from "@/app/actions/words";
+import { WordBankEditor } from "@/components/shared/WordBankEditor";
 import { SectionCard } from "@/components/shared/SectionCard";
 import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
 import { phonemeWordDisplay } from "@/lib/phoneme-types";
@@ -14,15 +14,15 @@ import { phonemeWordDisplay } from "@/lib/phoneme-types";
 const iconButtonClass =
   "inline-flex size-8 items-center justify-center rounded-(--control-radius) text-absent transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40";
 
-export function CorpusWordManager({
-  corpus,
+export function WordBankManager({
+  words,
   inventory,
-  onCorpusChange,
+  onWordsChange,
   variant = "page",
 }: {
-  corpus: PhonemeWord[];
+  words: PhonemeWord[];
   inventory: Phoneme[];
-  onCorpusChange: (next: PhonemeWord[], selectId?: string) => void;
+  onWordsChange: (next: PhonemeWord[], selectId?: string) => void;
   /** `page` wraps in SectionCard; `embedded` is plain content for dialogs. */
   variant?: "page" | "embedded";
 }) {
@@ -35,12 +35,12 @@ export function CorpusWordManager({
 
   const sorted = useMemo(
     () =>
-      [...corpus].sort((a, b) =>
+      [...words].sort((a, b) =>
         a.english.localeCompare(b.english, undefined, {
           sensitivity: "base",
         }),
       ),
-    [corpus],
+    [words],
   );
 
   async function handleConfirm(payload: {
@@ -59,24 +59,24 @@ export function CorpusWordManager({
         })),
       };
       if (editor?.mode === "edit" && editor.word) {
-        const result = await updateCorpusWordAction(editor.word.id, input);
+        const result = await updateWordAction(editor.word.id, input);
         if (!result.ok) {
           setError(result.error);
           return;
         }
-        onCorpusChange(
-          corpus.map((word) =>
+        onWordsChange(
+          words.map((word) =>
             word.id === editor.word!.id ? result.data : word,
           ),
           result.data.id,
         );
       } else {
-        const result = await createCorpusWordAction(input);
+        const result = await createWordAction(input);
         if (!result.ok) {
           setError(result.error);
           return;
         }
-        onCorpusChange([...corpus, result.data], result.data.id);
+        onWordsChange([...words, result.data], result.data.id);
       }
       setEditor(null);
     } finally {
@@ -94,12 +94,12 @@ export function CorpusWordManager({
     setBusy(true);
     setError(null);
     try {
-      const result = await deleteCorpusWordAction(word.id);
+      const result = await deleteWordAction(word.id);
       if (!result.ok) {
         setError(result.error);
         return;
       }
-      onCorpusChange(corpus.filter((entry) => entry.id !== word.id));
+      onWordsChange(words.filter((entry) => entry.id !== word.id));
     } finally {
       setBusy(false);
     }
@@ -187,7 +187,7 @@ export function CorpusWordManager({
         body
       )}
 
-      <CorpusWordEditor
+      <WordBankEditor
         open={editor !== null}
         title={editor?.mode === "edit" ? "Edit word" : "Add word"}
         inventory={inventory}

@@ -2,20 +2,20 @@
 
 import Link from "next/link";
 import { useId } from "react";
-import { CorpusWordManager } from "@/components/shared/CorpusWordManager";
+import { WordBankManager } from "@/components/shared/WordBankManager";
 import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
 
 export function WordBankModal({
   open,
-  corpus,
+  words,
   inventory,
-  onCorpusChange,
+  onWordsChange,
   onClose,
 }: {
   open: boolean;
-  corpus: PhonemeWord[];
+  words: PhonemeWord[];
   inventory: Phoneme[];
-  onCorpusChange: (next: PhonemeWord[], selectId?: string) => void;
+  onWordsChange: (next: PhonemeWord[], selectId?: string) => void;
   onClose: () => void;
 }) {
   const titleId = useId();
@@ -58,10 +58,10 @@ export function WordBankModal({
         </div>
 
         <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-          <CorpusWordManager
-            corpus={corpus}
+          <WordBankManager
+            words={words}
             inventory={inventory}
-            onCorpusChange={onCorpusChange}
+            onWordsChange={onWordsChange}
             variant="embedded"
           />
         </div>

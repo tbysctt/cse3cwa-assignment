@@ -42,6 +42,7 @@ function mapPhoneme(row: PhonemeRow): PhonemeInput {
 }
 
 function mapWord(row: WordRow): StoredWord {
+  // StoredWord.id is the activity_words row UUID (not a bank slug).
   const phonemes = [...row.phonemes]
     .sort((a, b) => a.position - b.position)
     .map(mapPhoneme);

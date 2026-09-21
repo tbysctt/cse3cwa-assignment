@@ -38,8 +38,8 @@ vi.mock("@/dal", async () => {
     ping: vi.fn(),
     listPhonemeInventory: vi.fn(async () => HCE_PHONEME_INVENTORY),
     getKeyboardRows: vi.fn(async () => HCE_KEYBOARD_ROWS),
-    listCorpusWords: vi.fn(async () => []),
-    findCorpusWordBySlug: vi.fn(async () => null),
+    listWords: vi.fn(async () => []),
+    findWordBySlug: vi.fn(async () => null),
     DalNotFoundError: errors.DalNotFoundError,
     DalValidationError: errors.DalValidationError,
   };

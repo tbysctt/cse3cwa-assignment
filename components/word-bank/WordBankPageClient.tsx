@@ -1,23 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { CorpusWordManager } from "@/components/shared/CorpusWordManager";
+import { WordBankManager } from "@/components/shared/WordBankManager";
 import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
 
 export function WordBankPageClient({
-  initialCorpus,
+  initialWords,
   inventory,
 }: {
-  initialCorpus: PhonemeWord[];
+  initialWords: PhonemeWord[];
   inventory: Phoneme[];
 }) {
-  const [corpus, setCorpus] = useState(initialCorpus);
+  const [words, setWords] = useState(initialWords);
 
   return (
-    <CorpusWordManager
-      corpus={corpus}
+    <WordBankManager
+      words={words}
       inventory={inventory}
-      onCorpusChange={(next) => setCorpus(next)}
+      onWordsChange={(next) => setWords(next)}
       variant="page"
     />
   );

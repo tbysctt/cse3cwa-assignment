@@ -28,8 +28,8 @@ describe("activity builders", () => {
 
   it("downloads a valid Wordle from the HCE corpus with difficulty presets", async () => {
     const user = userEvent.setup();
-    const firstThree = wordsForLength(TEST_BUILDER_PROPS.corpus, 3)[0]!;
-    const firstFive = wordsForLength(TEST_BUILDER_PROPS.corpus, 5)[0]!;
+    const firstThree = wordsForLength(TEST_BUILDER_PROPS.words, 3)[0]!;
+    const firstFive = wordsForLength(TEST_BUILDER_PROPS.words, 5)[0]!;
     render(<WordleBuilder {...TEST_BUILDER_PROPS} />);
     const generate = screen.getByRole("button", { name: "Generate and download HTML" });
 
@@ -82,7 +82,7 @@ describe("activity builders", () => {
     expect(
       screen.getByRole("list", { name: "Word search bank picks" }),
     ).toBeInTheDocument();
-    const defaultPicks = TEST_WORD_SEARCH_PROPS.corpus.slice(0, 5);
+    const defaultPicks = TEST_WORD_SEARCH_PROPS.words.slice(0, 5);
     for (const [index, word] of defaultPicks.entries()) {
       expect(
         screen.getByRole("combobox", { name: `Word ${index + 1}` }),

@@ -1,6 +1,6 @@
 import {
   getKeyboardRows,
-  listCorpusWords,
+  listWords,
   listPhonemeInventory,
 } from "@/dal";
 import { WordleBuilder } from "@/components/wordle/WordleBuilder";
@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 };
 
 export default async function WordlePage() {
-  const [inventory, keyboardRows, corpus] = await Promise.all([
+  const [inventory, keyboardRows, words] = await Promise.all([
     listPhonemeInventory(),
     getKeyboardRows(),
-    listCorpusWords(),
+    listWords(),
   ]);
 
   return (
@@ -30,7 +30,7 @@ export default async function WordlePage() {
       <WordleBuilder
         inventory={inventory}
         keyboardRows={keyboardRows}
-        corpus={corpus}
+        words={words}
       />
     </div>
   );
