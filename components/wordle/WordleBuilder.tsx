@@ -3,8 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 import type { SerializedActivity } from "@/lib/activity-action-types";
 import { BuilderLayout } from "@/components/shared/BuilderLayout";
-import { CorpusWordManager } from "@/components/shared/CorpusWordManager";
 import { SavedActivitiesPanel } from "@/components/shared/SavedActivitiesPanel";
+import { WordBankModal } from "@/components/shared/WordBankModal";
 import { WordleActivityPreview } from "@/components/wordle/WordleActivityPreview";
 import { WordleConfigForm } from "@/components/wordle/WordleConfigForm";
 import type {
@@ -95,6 +95,7 @@ export function WordleBuilder({
   const [loadedFallback, setLoadedFallback] = useState<PhonemeWord | null>(
     null,
   );
+  const [wordBankOpen, setWordBankOpen] = useState(false);
 
   const lengthWords = useMemo(
     () => wordsForLength(corpus, length),
@@ -279,7 +280,16 @@ export function WordleBuilder({
     <>
       <BuilderLayout
         library={
-          <>
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="ui-button ui-button-secondary px-3 py-1.5 text-sm"
+                onClick={() => setWordBankOpen(true)}
+              >
+                Add/edit words
+              </button>
+            </div>
             <SavedActivitiesPanel
               summaries={saved.summaries}
               selectedId={saved.selectedId}
@@ -293,12 +303,7 @@ export function WordleBuilder({
               onRename={saved.onRename}
               onDelete={saved.onDelete}
             />
-            <CorpusWordManager
-              corpus={corpus}
-              inventory={baseInventory}
-              onCorpusChange={handleCorpusChange}
-            />
-          </>
+          </div>
         }
         config={
           <WordleConfigForm
@@ -336,6 +341,13 @@ export function WordleBuilder({
         }
       />
       {saved.nameDialogNode}
+      <WordBankModal
+        open={wordBankOpen}
+        corpus={corpus}
+        inventory={baseInventory}
+        onCorpusChange={handleCorpusChange}
+        onClose={() => setWordBankOpen(false)}
+      />
     </>
   );
 }

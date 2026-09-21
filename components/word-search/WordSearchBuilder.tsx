@@ -3,8 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 import type { SerializedActivity } from "@/lib/activity-action-types";
 import { BuilderLayout } from "@/components/shared/BuilderLayout";
-import { CorpusWordManager } from "@/components/shared/CorpusWordManager";
 import { SavedActivitiesPanel } from "@/components/shared/SavedActivitiesPanel";
+import { WordBankModal } from "@/components/shared/WordBankModal";
 import { WordSearchActivityPreview } from "@/components/word-search/WordSearchActivityPreview";
 import { WordSearchConfigForm } from "@/components/word-search/WordSearchConfigForm";
 import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
@@ -88,6 +88,7 @@ export function WordSearchBuilder({
   const [storedShowHints, setStoredShowHints] = useState<boolean | null>(null);
   const [activityName, setActivityName] = useState("");
   const [loadedFallbacks, setLoadedFallbacks] = useState<PhonemeWord[]>([]);
+  const [wordBankOpen, setWordBankOpen] = useState(false);
 
   const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
   const showHints = storedShowHints ?? DIFFICULTY_PRESETS[difficulty].showHints;
@@ -307,7 +308,16 @@ export function WordSearchBuilder({
     <>
       <BuilderLayout
         library={
-          <>
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="ui-button ui-button-secondary px-3 py-1.5 text-sm"
+                onClick={() => setWordBankOpen(true)}
+              >
+                Add/edit words
+              </button>
+            </div>
             <SavedActivitiesPanel
               summaries={saved.summaries}
               selectedId={saved.selectedId}
@@ -321,12 +331,7 @@ export function WordSearchBuilder({
               onRename={saved.onRename}
               onDelete={saved.onDelete}
             />
-            <CorpusWordManager
-              corpus={corpus}
-              inventory={inventory}
-              onCorpusChange={handleCorpusChange}
-            />
-          </>
+          </div>
         }
         config={
           <WordSearchConfigForm
@@ -358,6 +363,13 @@ export function WordSearchBuilder({
         }
       />
       {saved.nameDialogNode}
+      <WordBankModal
+        open={wordBankOpen}
+        corpus={corpus}
+        inventory={inventory}
+        onCorpusChange={handleCorpusChange}
+        onClose={() => setWordBankOpen(false)}
+      />
     </>
   );
 }

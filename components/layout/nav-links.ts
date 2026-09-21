@@ -2,6 +2,7 @@ export const primaryNavLinks = [
   { href: "/", label: "Home" },
   { href: "/wordle", label: "Wordle" },
   { href: "/word-search", label: "Word Search" },
+  { href: "/word-bank", label: "Word bank" },
 ] as const;
 
 export const secondaryNavLinks = [

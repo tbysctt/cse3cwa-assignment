@@ -18,10 +18,13 @@ export function CorpusWordManager({
   corpus,
   inventory,
   onCorpusChange,
+  variant = "page",
 }: {
   corpus: PhonemeWord[];
   inventory: Phoneme[];
   onCorpusChange: (next: PhonemeWord[], selectId?: string) => void;
+  /** `page` wraps in SectionCard; `embedded` is plain content for dialogs. */
+  variant?: "page" | "embedded";
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,83 +105,87 @@ export function CorpusWordManager({
     }
   }
 
+  const body = (
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          className="ui-button ui-button-secondary px-3 py-1.5 text-sm disabled:opacity-50"
+          disabled={busy}
+          onClick={() => setEditor({ mode: "create" })}
+        >
+          Add word
+        </button>
+      </div>
+
+      {sorted.length === 0 ? (
+        <p className="rounded-(--control-radius) border border-dashed border-border px-3 py-6 text-center text-sm text-absent">
+          No words in the bank yet. Add one to configure activities.
+        </p>
+      ) : (
+        <ul
+          className="divide-y divide-border overflow-hidden rounded-(--control-radius) border border-border"
+          aria-label="Word bank"
+        >
+          {sorted.map((word) => (
+            <li key={word.id} className="flex items-center gap-2 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {word.english}
+                </p>
+                <p className="truncate font-mono text-xs text-absent">
+                  {phonemeWordDisplay(word)} · {word.phonemes.length} phonemes
+                </p>
+              </div>
+              <button
+                type="button"
+                className={iconButtonClass}
+                aria-label={`Edit ${word.english}`}
+                title="Edit"
+                disabled={busy}
+                onClick={() => setEditor({ mode: "edit", word })}
+              >
+                <span aria-hidden="true" className="text-sm font-bold">
+                  ✎
+                </span>
+              </button>
+              <button
+                type="button"
+                className={`${iconButtonClass} hover:text-danger`}
+                aria-label={`Delete ${word.english}`}
+                title="Delete"
+                disabled={busy}
+                onClick={() => void handleDelete(word)}
+              >
+                <span aria-hidden="true" className="text-sm font-bold">
+                  ⌫
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {error ? (
+        <p className="rounded-(--control-radius) border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-semibold text-danger">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+
   return (
     <>
-      <SectionCard
-        title="Word bank"
-        description="Add, edit, or delete phoneme words stored in the database. Activities pick from this list."
-      >
-        <div className="space-y-3">
-          <div className="flex justify-end">
-            <button
-              type="button"
-              className="ui-button ui-button-secondary px-3 py-1.5 text-sm disabled:opacity-50"
-              disabled={busy}
-              onClick={() => setEditor({ mode: "create" })}
-            >
-              Add word
-            </button>
-          </div>
-
-          {sorted.length === 0 ? (
-            <p className="rounded-(--control-radius) border border-dashed border-border px-3 py-6 text-center text-sm text-absent">
-              No words in the bank yet. Add one to configure activities.
-            </p>
-          ) : (
-            <ul
-              className="divide-y divide-border overflow-hidden rounded-(--control-radius) border border-border"
-              aria-label="Word bank"
-            >
-              {sorted.map((word) => (
-                <li
-                  key={word.id}
-                  className="flex items-center gap-2 px-3 py-2"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">
-                      {word.english}
-                    </p>
-                    <p className="truncate font-mono text-xs text-absent">
-                      {phonemeWordDisplay(word)} · {word.phonemes.length}{" "}
-                      phonemes
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={iconButtonClass}
-                    aria-label={`Edit ${word.english}`}
-                    title="Edit"
-                    disabled={busy}
-                    onClick={() => setEditor({ mode: "edit", word })}
-                  >
-                    <span aria-hidden="true" className="text-sm font-bold">
-                      ✎
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`${iconButtonClass} hover:text-danger`}
-                    aria-label={`Delete ${word.english}`}
-                    title="Delete"
-                    disabled={busy}
-                    onClick={() => void handleDelete(word)}
-                  >
-                    <span aria-hidden="true" className="text-sm font-bold">
-                      ⌫
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {error ? (
-            <p className="rounded-(--control-radius) border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-semibold text-danger">
-              {error}
-            </p>
-          ) : null}
-        </div>
-      </SectionCard>
+      {variant === "page" ? (
+        <SectionCard
+          title="Word bank"
+          description="Add, edit, or delete phoneme words stored in the database. Activities pick from this list."
+        >
+          {body}
+        </SectionCard>
+      ) : (
+        body
+      )}
 
       <CorpusWordEditor
         open={editor !== null}

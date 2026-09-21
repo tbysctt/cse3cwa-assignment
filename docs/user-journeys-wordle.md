@@ -2,7 +2,7 @@
 
 Teacher-focused map of Phoneme Wordle configuration, persistence, and export. Student preview play is only covered where it sits in **panel 3**.
 
-**Primary sources:** `app/wordle/page.tsx`, `components/wordle/WordleBuilder.tsx`, `components/shared/SavedActivitiesPanel.tsx`, `components/shared/CorpusWordManager.tsx`, `hooks/useSavedActivities.tsx`, `dal/reference.ts`, `app/actions/corpus.ts`.
+**Primary sources:** `app/wordle/page.tsx`, `app/word-bank/page.tsx`, `components/wordle/WordleBuilder.tsx`, `components/shared/SavedActivitiesPanel.tsx`, `components/shared/WordBankModal.tsx`, `components/shared/CorpusWordManager.tsx`, `hooks/useSavedActivities.tsx`, `dal/reference.ts`, `app/actions/corpus.ts`.
 
 ---
 
@@ -20,11 +20,13 @@ There is **no** HCE corpus vs custom mode. All selectable words live in `corpus_
 
 ## 2. Layout
 
-1. **Library** — saved activity configs (create / select / rename / delete) **and** the **Word bank** (add / edit / delete DB words).
+1. **Library** — saved activity configs (create / select / rename / delete), plus **Add/edit words** which opens the word bank dialog.
 2. **Configure** — pick phoneme length + target word from the bank; set difficulty; **Save** | **Save as new** | **Generate and download HTML**.
 3. **Preview** — live student game for the selected bank word.
 
 Activity names use modals (first Save / Save as new / pencil rename), not a permanent name field.
+
+Word bank edits also have a dedicated page at **`/word-bank`** (nav: **Word bank**).
 
 ---
 
@@ -41,9 +43,16 @@ Activity names use modals (first Save / Save as new / pencil rename), not a perm
 
 ### A. Manage the word bank
 
-1. In **Word bank**, click **Add word** (or pencil on a row).
+From the builder:
+
+1. Click **Add/edit words** → **Word bank** dialog (same CRUD as the full page).
+2. Optional: **Open word bank** link → `/word-bank`.
+
+From `/word-bank` or the dialog:
+
+1. Click **Add word** (or pencil on a row).
 2. Enter English label + phoneme sequence (text and/or palette). Must be 3, 4, or 5 phonemes.
-3. **Save word** → `createCorpusWord` / `updateCorpusWord` server action; list refreshes.
+3. **Save word** → `createCorpusWord` / `updateCorpusWord` server action; list refreshes; builder pickers stay current via `onCorpusChange`.
 4. Trash icon → confirm → `deleteCorpusWord`; activities that had that pick fall back if needed.
 
 ### B. Configure from the bank → Save
@@ -79,6 +88,7 @@ Draft vs stored generate modes unchanged (clean saved → DB snapshot HTML; othe
 - UI toggle **HCE corpus** / **Custom word entry**
 - Activity-local “custom” word state / mode in signatures
 - Hard-coded UI prefill lists as the runtime source of truth (seed data remains in DB + `data/` fixtures for migrations/tests)
+- Inline full **Word bank** section on builders (replaced by **Add/edit words** modal + `/word-bank`)
 
 ---
 
@@ -88,7 +98,9 @@ Draft vs stored generate modes unchanged (clean saved → DB snapshot HTML; othe
 | --- | --- |
 | `dal/reference.ts` | Corpus list + CRUD |
 | `app/actions/corpus.ts` | Server actions for word bank |
-| `components/shared/CorpusWordManager.tsx` | Word bank UI |
+| `app/word-bank/page.tsx` | Dedicated word bank page |
+| `components/shared/WordBankModal.tsx` | Dialog shell for builders |
+| `components/shared/CorpusWordManager.tsx` | Word bank UI (`page` / `embedded`) |
 | `components/shared/CorpusWordEditor.tsx` | Add/edit modal |
 | `components/wordle/WordleConfigForm.tsx` | Select-only configure |
 | `components/wordle/WordleBuilder.tsx` | Orchestration without mode |

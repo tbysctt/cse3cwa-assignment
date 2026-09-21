@@ -72,24 +72,27 @@ describe("Word bank builder flows", () => {
     const user = userEvent.setup();
     render(<WordleBuilder {...TEST_BUILDER_PROPS} />);
 
-    await user.click(screen.getByRole("button", { name: "Add word" }));
-    const dialog = screen.getByRole("dialog");
-    expect(within(dialog).getByText("Add word")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add/edit words" }));
+    const bankDialog = screen.getByRole("dialog", { name: "Word bank" });
+    await user.click(within(bankDialog).getByRole("button", { name: "Add word" }));
+
+    const editorDialog = screen.getByRole("dialog", { name: "Add word" });
+    expect(within(editorDialog).getByText("Add word")).toBeInTheDocument();
 
     await user.type(
-      within(dialog).getByPlaceholderText("e.g. ship"),
+      within(editorDialog).getByPlaceholderText("e.g. ship"),
       "quiz",
     );
     await user.clear(
-      within(dialog).getByPlaceholderText("e.g. /ʃ/ /ɪ/ /p/"),
+      within(editorDialog).getByPlaceholderText("e.g. /ʃ/ /ɪ/ /p/"),
     );
     await user.type(
-      within(dialog).getByPlaceholderText("e.g. /ʃ/ /ɪ/ /p/"),
+      within(editorDialog).getByPlaceholderText("e.g. /ʃ/ /ɪ/ /p/"),
       "/k/ /w/ /ɪ/ /z/",
     );
 
     await user.click(
-      within(dialog).getByRole("button", { name: "Save word" }),
+      within(editorDialog).getByRole("button", { name: "Save word" }),
     );
     expect(createCorpusWordAction).toHaveBeenCalled();
   });
@@ -116,9 +119,24 @@ describe("Word bank builder flows", () => {
     );
   });
 
-  it("shows the word bank list for Word Search", () => {
+  it("opens the word bank modal from Word Search", async () => {
+    const user = userEvent.setup();
     render(<WordSearchBuilder {...TEST_WORD_SEARCH_PROPS} />);
-    expect(screen.getByRole("list", { name: "Word bank" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Add word" })).toBeInTheDocument();
+
+    expect(
+      screen.queryByRole("list", { name: "Word bank" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Add/edit words" }));
+    const bankDialog = screen.getByRole("dialog", { name: "Word bank" });
+    expect(
+      within(bankDialog).getByRole("list", { name: "Word bank" }),
+    ).toBeInTheDocument();
+    expect(
+      within(bankDialog).getByRole("button", { name: "Add word" }),
+    ).toBeInTheDocument();
+    expect(
+      within(bankDialog).getByRole("link", { name: "Open word bank" }),
+    ).toHaveAttribute("href", "/word-bank");
   });
 });
