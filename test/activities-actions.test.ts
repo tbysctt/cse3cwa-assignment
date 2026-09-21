@@ -27,7 +27,7 @@ const sampleActivity: ActivityConfiguration = {
 vi.mock("@/dal", async () => {
   const errors = await import("@/dal/errors");
   const { HCE_KEYBOARD_ROWS, HCE_PHONEME_INVENTORY } = await import(
-    "@/data/phonemes"
+    "./fixtures"
   );
   return {
     createActivity: vi.fn(),

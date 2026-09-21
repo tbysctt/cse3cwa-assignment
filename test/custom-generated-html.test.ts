@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 import { HCE_PHONEME_INVENTORY,
-  HCE_KEYBOARD_ROWS } from "@/data/phonemes";
+  HCE_KEYBOARD_ROWS } from "./fixtures";
 // keyboardRows added below
 import { parsePhonemeSequence } from "@/lib/custom-phonemes";
 import { generateWordleHtml } from "@/lib/generate-wordle-html";

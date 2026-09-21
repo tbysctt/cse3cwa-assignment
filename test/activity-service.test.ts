@@ -9,7 +9,7 @@ import {
   storedWordToPhonemeWord,
   wordToInput,
 } from "@/lib/activity-service";
-import { HCE_PHONEME_INVENTORY } from "@/data/phonemes";
+import { HCE_PHONEME_INVENTORY } from "./fixtures";
 import { DEFAULT_WORD_SEARCH_SEED } from "@/lib/word-search";
 
 const thinPhonemes = [

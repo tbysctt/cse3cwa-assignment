@@ -1,4 +1,4 @@
-import { HCE_PHONEME_INVENTORY } from "@/data/phonemes";
+import { HCE_PHONEME_INVENTORY } from "./fixtures";
 import { describe, expect, it } from "vitest";
 import {
   formatPhonemeSequence,

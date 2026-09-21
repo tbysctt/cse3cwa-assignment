@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PHONEME_INVENTORY, WORDLE_TARGET } from "@/data/phonemes";
+import { PHONEME_INVENTORY, WORDLE_TARGET } from "./fixtures";
 import {
   activitySignature,
   DIFFICULTY_OPTIONS,

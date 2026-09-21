@@ -1,6 +1,6 @@
 # Wordle activity builder — teacher user journeys
 
-Teacher-focused map of Phoneme Wordle configuration, persistence, and export. Student preview play is only covered where it sits in **panel 3**.
+Teacher-focused map of Phoneme Wordle configuration, persistence, and export.
 
 **Primary sources:** `app/wordle/page.tsx`, `app/word-bank/page.tsx`, `components/wordle/WordleBuilder.tsx`, `components/shared/SavedActivitiesPanel.tsx`, `components/shared/WordBankModal.tsx`, `components/shared/WordBankManager.tsx`, `hooks/useSavedActivities.tsx`, `dal/reference.ts`, `app/actions/words.ts`.
 
@@ -8,13 +8,13 @@ Teacher-focused map of Phoneme Wordle configuration, persistence, and export. St
 
 ## 1. Actor and goal
 
-| Actor | Role |
-| --- | --- |
+| Actor       | Role                                                                                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- |
 | **Teacher** | Manages the DB word bank, configures Wordle activities from that bank, saves activity configs, and downloads offline HTML. |
 
-**Goal:** Configure a phoneme Wordle from database words (no separate “custom” mode), keep named activity configs in Postgres, and export `phoneme-wordle.html`.
+**Goal:** Configure a phoneme Wordle from the word bank, keep named activity configs in Postgres, and export `phoneme-wordle.html`.
 
-There is **no** HCE corpus vs custom mode. All selectable words live in `words` / `word_phonemes` and are maintained with CRUD. Saved activities store copies in `activity_words` / `activity_word_phonemes`.
+Selectable words live in `words` / `word_phonemes` and are maintained with CRUD. Saved activities store copies in `activity_words` / `activity_word_phonemes`.
 
 ---
 
@@ -64,44 +64,39 @@ From `/word-bank` or the dialog:
 
 ### C. Load / rename / delete activities
 
-Same library patterns as before: row select loads; pencil renames; trash deletes; dirty navigation confirms discard.
+- Select a library row to load that config into the builder.
+- Pencil opens a rename modal; trash deletes after confirm.
+- Leaving a dirty draft (e.g. selecting another activity) prompts to discard unsaved changes.
 
 ### D. Generate and download HTML
 
-Draft vs stored generate modes unchanged (clean saved → DB snapshot HTML; otherwise draft HTML).
+- If the draft matches a clean saved activity, generate uses the stored DB snapshot.
+- Otherwise generate builds HTML from the current draft configuration.
+- Download is a single offline `phoneme-wordle.html` file.
 
 ---
 
 ## 5. Edge cases
 
-| Situation | Behaviour |
-| --- | --- |
-| No bank words for length | Target select empty; Save / Generate disabled |
+| Situation                              | Behaviour                                                                           |
+| -------------------------------------- | ----------------------------------------------------------------------------------- |
+| No bank words for length               | Target select empty; Save / Generate disabled                                       |
 | Loaded activity word missing from bank | Preview still uses stored snapshot; picker may not match until rematched by english |
-| Bank word english/phonemes edited | List updates; id stays the same UUID |
-| Bank word deleted | Picker rematches by english or uses loaded snapshot fallback |
-| Invalid editor input | Modal validation blocks Save word |
-
----
-
-## 6. What this removed
-
-- UI toggle **HCE corpus** / **Custom word entry**
-- Activity-local “custom” word state / mode in signatures
-- Hard-coded UI prefill lists as the runtime source of truth (seed data remains in DB + `data/` fixtures for migrations/tests)
-- Inline full **Word bank** section on builders (replaced by **Add/edit words** modal + `/word-bank`)
+| Bank word english/phonemes edited      | List updates; id stays the same UUID                                                |
+| Bank word deleted                      | Picker rematches by english or uses loaded snapshot fallback                        |
+| Invalid editor input                   | Modal validation blocks Save word                                                   |
 
 ---
 
 ## Related files
 
-| Path | Role |
-| --- | --- |
-| `dal/reference.ts` | Word bank list + CRUD |
-| `app/actions/words.ts` | Server actions for word bank |
-| `app/word-bank/page.tsx` | Dedicated word bank page |
-| `components/shared/WordBankModal.tsx` | Dialog shell for builders |
-| `components/shared/WordBankManager.tsx` | Word bank UI (`page` / `embedded`) |
-| `components/shared/WordBankEditor.tsx` | Add/edit modal |
-| `components/wordle/WordleConfigForm.tsx` | Select-only configure |
-| `components/wordle/WordleBuilder.tsx` | Orchestration without mode |
+| Path                                     | Role                               |
+| ---------------------------------------- | ---------------------------------- |
+| `dal/reference.ts`                       | Word bank list + CRUD              |
+| `app/actions/words.ts`                   | Server actions for word bank       |
+| `app/word-bank/page.tsx`                 | Dedicated word bank page           |
+| `components/shared/WordBankModal.tsx`    | Dialog shell for builders          |
+| `components/shared/WordBankManager.tsx`  | Word bank UI (`page` / `embedded`) |
+| `components/shared/WordBankEditor.tsx`   | Add/edit modal                     |
+| `components/wordle/WordleConfigForm.tsx` | Configure form                     |
+| `components/wordle/WordleBuilder.tsx`    | Builder orchestration              |

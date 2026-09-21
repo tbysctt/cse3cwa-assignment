@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  PHONEME_INVENTORY,
-  WORD_SEARCH_WORDS,
-  type PhonemeWord,
-} from "@/data/phonemes";
+import { PHONEME_INVENTORY, WORD_SEARCH_WORDS } from "./fixtures";
+import type { PhonemeWord } from "@/lib/phoneme-types";
 import {
   cellsAlongSegment,
   cellsForPlacement,

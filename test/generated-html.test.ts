@@ -1,15 +1,15 @@
 import { JSDOM } from "jsdom";
 import { describe, expect, it, vi } from "vitest";
-import { HCE_WORDS_4, HCE_WORDS_5 } from "@/data/phonemes";
+import { HCE_WORDS_4, HCE_WORDS_5 } from "./fixtures";
 import {
   HCE_KEYBOARD_ROWS,
   HCE_PHONEME_INVENTORY,
-} from "@/data/phonemes";
+} from "./fixtures";
 import {
   PHONEME_INVENTORY,
   WORDLE_TARGET,
   WORD_SEARCH_WORDS,
-} from "@/data/phonemes";
+} from "./fixtures";
 import { generateWordSearchHtml } from "@/lib/generate-word-search-html";
 import { generateWordleHtml } from "@/lib/generate-wordle-html";
 import { escapeHtml, toJson } from "@/lib/html";

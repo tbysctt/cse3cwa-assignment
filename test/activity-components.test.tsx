@@ -5,13 +5,13 @@ import { WordSearchGame } from "@/components/word-search/WordSearchGame";
 import { PhonemeKeyboard } from "@/components/wordle/PhonemeKeyboard";
 import { WordleConfigForm } from "@/components/wordle/WordleConfigForm";
 import { WordleGame } from "@/components/wordle/WordleGame";
-import { HCE_WORDS_4, HCE_WORDS_5, wordsForLength } from "@/data/phonemes";
-import { HCE_KEYBOARD_ROWS, HCE_PHONEME_INVENTORY } from "@/data/phonemes";
+import { HCE_WORDS_3, HCE_WORDS_4, HCE_WORDS_5 } from "./fixtures";
+import { HCE_KEYBOARD_ROWS, HCE_PHONEME_INVENTORY } from "./fixtures";
 import {
   PHONEME_INVENTORY,
   WORDLE_TARGET,
   WORD_SEARCH_WORDS,
-} from "@/data/phonemes";
+} from "./fixtures";
 import {
   cellsForPlacement,
   generateWordSearch,
@@ -167,7 +167,7 @@ describe("Wordle components", () => {
         onLengthChange={onLengthChange}
         wordId="thin"
         onWordIdChange={onWordIdChange}
-        lengthWords={wordsForLength(3)}
+        lengthWords={HCE_WORDS_3}
         difficulty="medium"
         onDifficultyChange={onDifficultyChange}
         canGenerate

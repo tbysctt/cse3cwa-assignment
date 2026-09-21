@@ -1,15 +1,15 @@
 /**
- * One-off generator: writes drizzle/0001_seed_hce.sql from HCE reference arrays.
+ * HCE seed arrays + generator for drizzle/0001_seed_hce.sql.
  * Run: node scripts/generate-hce-seed.mjs
+ * Tests may import KEYBOARD_ROWS / WORDS_* without writing SQL.
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** @type {{ ipa: string, grapheme: string, example: string } | null}[][]} */
-const KEYBOARD_ROWS = [
+export const KEYBOARD_ROWS = [
   [
     { ipa: "p", grapheme: "P", example: "as in stop" },
     { ipa: "t", grapheme: "T", example: "as in tent" },
@@ -85,7 +85,7 @@ const KEYBOARD_ROWS = [
 ];
 
 /** @type {[string, ...string[]][]} */
-const WORDS_3 = [
+export const WORDS_3 = [
   ["bed", "b", "e", "d"],
   ["bid", "b", "ɪ", "d"],
   ["bad", "b", "æ", "d"],
@@ -119,7 +119,7 @@ const WORDS_3 = [
 ];
 
 /** @type {[string, ...string[]][]} */
-const WORDS_4 = [
+export const WORDS_4 = [
   ["stop", "s", "t", "ɔ", "p"],
   ["frog", "f", "ɹ", "ɔ", "ɡ"],
   ["clap", "k", "l", "æ", "p"],
@@ -153,7 +153,7 @@ const WORDS_4 = [
 ];
 
 /** @type {[string, ...string[]][]} */
-const WORDS_5 = [
+export const WORDS_5 = [
   ["stamp", "s", "t", "æ", "m", "p"],
   ["plant", "p", "l", "æ", "n", "t"],
   ["blank", "b", "l", "æ", "ŋ", "k"],
@@ -194,65 +194,75 @@ function sqlBreak(parts) {
   return parts.join("\n--> statement-breakpoint\n");
 }
 
-const inventory = [];
-const seen = new Set();
-for (const row of KEYBOARD_ROWS) {
-  for (const slot of row) {
-    if (!slot || seen.has(slot.ipa)) continue;
-    seen.add(slot.ipa);
-    inventory.push(slot);
-  }
-}
-
-const phonemeInserts = inventory.map(
-  (p) =>
-    `INSERT INTO "phonemes" ("ipa", "grapheme", "example") VALUES (${sqlStr(p.ipa)}, ${sqlStr(p.grapheme)}, ${sqlStr(p.example)}) ON CONFLICT ("ipa") DO NOTHING;`,
-);
-
-const keyboardInserts = [];
-KEYBOARD_ROWS.forEach((row, rowIndex) => {
-  row.forEach((slot, colIndex) => {
-    if (slot === null) {
-      keyboardInserts.push(
-        `INSERT INTO "keyboard_slots" ("row", "col", "phoneme_id") VALUES (${rowIndex}, ${colIndex}, NULL) ON CONFLICT ("row", "col") DO NOTHING;`,
-      );
-    } else {
-      keyboardInserts.push(
-        `INSERT INTO "keyboard_slots" ("row", "col", "phoneme_id") SELECT ${rowIndex}, ${colIndex}, "id" FROM "phonemes" WHERE "ipa" = ${sqlStr(slot.ipa)} ON CONFLICT ("row", "col") DO NOTHING;`,
-      );
+function writeSeedSql() {
+  const inventory = [];
+  const seen = new Set();
+  for (const row of KEYBOARD_ROWS) {
+    for (const slot of row) {
+      if (!slot || seen.has(slot.ipa)) continue;
+      seen.add(slot.ipa);
+      inventory.push(slot);
     }
-  });
-});
-
-const wordGroups = [
-  [3, WORDS_3],
-  [4, WORDS_4],
-  [5, WORDS_5],
-];
-
-const wordInserts = [];
-const wordPhonemeInserts = [];
-for (const [length, wordList] of wordGroups) {
-  for (const [english, ...ipas] of wordList) {
-    wordInserts.push(
-      `INSERT INTO "words" ("english", "phoneme_length") VALUES (${sqlStr(english)}, ${length}) ON CONFLICT ("english") DO NOTHING;`,
-    );
-    ipas.forEach((ipa, position) => {
-      wordPhonemeInserts.push(
-        `INSERT INTO "word_phonemes" ("word_id", "position", "phoneme_id") SELECT w."id", ${position}, p."id" FROM "words" w, "phonemes" p WHERE w."english" = ${sqlStr(english)} AND p."ipa" = ${sqlStr(ipa)} ON CONFLICT ("word_id", "position") DO NOTHING;`,
-      );
-    });
   }
+
+  const phonemeInserts = inventory.map(
+    (p) =>
+      `INSERT INTO "phonemes" ("ipa", "grapheme", "example") VALUES (${sqlStr(p.ipa)}, ${sqlStr(p.grapheme)}, ${sqlStr(p.example)}) ON CONFLICT ("ipa") DO NOTHING;`,
+  );
+
+  const keyboardInserts = [];
+  KEYBOARD_ROWS.forEach((row, rowIndex) => {
+    row.forEach((slot, colIndex) => {
+      if (slot === null) {
+        keyboardInserts.push(
+          `INSERT INTO "keyboard_slots" ("row", "col", "phoneme_id") VALUES (${rowIndex}, ${colIndex}, NULL) ON CONFLICT ("row", "col") DO NOTHING;`,
+        );
+      } else {
+        keyboardInserts.push(
+          `INSERT INTO "keyboard_slots" ("row", "col", "phoneme_id") SELECT ${rowIndex}, ${colIndex}, "id" FROM "phonemes" WHERE "ipa" = ${sqlStr(slot.ipa)} ON CONFLICT ("row", "col") DO NOTHING;`,
+        );
+      }
+    });
+  });
+
+  const wordGroups = [
+    [3, WORDS_3],
+    [4, WORDS_4],
+    [5, WORDS_5],
+  ];
+
+  const wordInserts = [];
+  const wordPhonemeInserts = [];
+  for (const [length, wordList] of wordGroups) {
+    for (const [english, ...ipas] of wordList) {
+      wordInserts.push(
+        `INSERT INTO "words" ("english", "phoneme_length") VALUES (${sqlStr(english)}, ${length}) ON CONFLICT ("english") DO NOTHING;`,
+      );
+      ipas.forEach((ipa, position) => {
+        wordPhonemeInserts.push(
+          `INSERT INTO "word_phonemes" ("word_id", "position", "phoneme_id") SELECT w."id", ${position}, p."id" FROM "words" w, "phonemes" p WHERE w."english" = ${sqlStr(english)} AND p."ipa" = ${sqlStr(ipa)} ON CONFLICT ("word_id", "position") DO NOTHING;`,
+        );
+      });
+    }
+  }
+
+  const sql = sqlBreak([
+    "-- Seed HCE phoneme inventory, keyboard layout, and word bank",
+    ...phonemeInserts,
+    ...keyboardInserts,
+    ...wordInserts,
+    ...wordPhonemeInserts,
+  ]);
+
+  const outPath = path.join(__dirname, "..", "drizzle", "0001_seed_hce.sql");
+  fs.writeFileSync(outPath, `${sql}\n`);
+  console.log(`Wrote ${outPath}`);
 }
 
-const sql = sqlBreak([
-  "-- Seed HCE phoneme inventory, keyboard layout, and word bank",
-  ...phonemeInserts,
-  ...keyboardInserts,
-  ...wordInserts,
-  ...wordPhonemeInserts,
-]);
+const isMain =
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href;
 
-const outPath = path.join(__dirname, "..", "drizzle", "0001_seed_hce.sql");
-fs.writeFileSync(outPath, `${sql}\n`);
-console.log(`Wrote ${outPath}`);
+if (isMain) {
+  writeSeedSql();
+}
