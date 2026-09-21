@@ -3,27 +3,18 @@
 import { useCallback, useMemo, useState } from "react";
 import type { SerializedActivity } from "@/lib/activity-action-types";
 import { BuilderLayout } from "@/components/shared/BuilderLayout";
+import { CorpusWordManager } from "@/components/shared/CorpusWordManager";
 import { SavedActivitiesPanel } from "@/components/shared/SavedActivitiesPanel";
 import { WordSearchActivityPreview } from "@/components/word-search/WordSearchActivityPreview";
-import {
-  WordSearchConfigForm,
-  type CustomWordEntry,
-} from "@/components/word-search/WordSearchConfigForm";
+import { WordSearchConfigForm } from "@/components/word-search/WordSearchConfigForm";
 import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
 import { findCorpusWord } from "@/lib/phoneme-types";
 import { useSavedActivities } from "@/hooks/useSavedActivities";
-import {
-  activitySignature,
-  type Difficulty,
-} from "@/lib/activity";
+import { activitySignature, type Difficulty } from "@/lib/activity";
 import {
   buildWordSearchCreateInput,
   storedWordToPhonemeWord,
 } from "@/lib/activity-service";
-import {
-  parsePhonemeSequence,
-  validateCustomWord,
-} from "@/lib/custom-phonemes";
 import { generateWordSearchHtml } from "@/lib/generate-word-search-html";
 import { DIFFICULTY_PRESETS } from "@/lib/wordle";
 import {
@@ -34,25 +25,9 @@ import {
   type WordSearchPuzzle,
 } from "@/lib/word-search";
 
-function emptyCustomEntries(inventory: Phoneme[]): CustomWordEntry[] {
-  const samples = [
-    "/k/ /æ/ /t/",
-    "/d/ /ɔ/ /ɡ/",
-    "/f/ /ɪ/ /ʃ/",
-    "/f/ /ɹ/ /ɔ/ /ɡ/",
-    "/m/ /ɪ/ /l/ /k/",
-  ];
-  const labels = ["cat", "dog", "fish", "frog", "milk"];
-  return labels.map((english, i) => ({
-    english,
-    phonemes: parsePhonemeSequence(samples[i], inventory),
-  }));
-}
-
 function draftSignature(parts: {
   name: string;
   difficulty: Difficulty;
-  mode: "corpus" | "custom";
   words: PhonemeWord[];
   showHints: boolean;
   seed: number;
@@ -60,10 +35,10 @@ function draftSignature(parts: {
   return JSON.stringify({
     name: parts.name.trim(),
     difficulty: parts.difficulty,
-    mode: parts.mode,
     showHints: parts.showHints,
     seed: parts.seed,
     words: parts.words.map((word) => ({
+      id: word.id,
       english: word.english.trim(),
       phonemes: word.phonemes.map((p) => ({
         ipa: p.ipa,
@@ -74,19 +49,34 @@ function draftSignature(parts: {
   });
 }
 
+function matchCorpusWord(
+  corpus: PhonemeWord[],
+  word: PhonemeWord,
+): PhonemeWord | null {
+  const byId = findCorpusWord(corpus, word.id);
+  if (byId) return byId;
+  return (
+    corpus.find(
+      (entry) =>
+        entry.english.toLowerCase() === word.english.toLowerCase() &&
+        entry.phonemes.length === word.phonemes.length,
+    ) ?? null
+  );
+}
+
 export function WordSearchBuilder({
   inventory,
-  corpus,
+  corpus: initialCorpus,
 }: {
   inventory: Phoneme[];
   corpus: PhonemeWord[];
 }) {
+  const [corpus, setCorpus] = useState(initialCorpus);
 
   const initialCorpusIds = corpus
     .slice(0, REQUIRED_WORD_COUNT)
     .map((word) => word.id);
 
-  const [mode, setMode] = useState<"corpus" | "custom">("corpus");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [wordIds, setWordIds] = useState<string[]>(() => {
     if (initialCorpusIds.length === REQUIRED_WORD_COUNT) {
@@ -94,72 +84,29 @@ export function WordSearchBuilder({
     }
     return Array.from({ length: REQUIRED_WORD_COUNT }, () => "");
   });
-  const [customEntries, setCustomEntries] = useState<CustomWordEntry[]>(() =>
-    emptyCustomEntries(inventory),
-  );
-  const [activeSlotIndex, setActiveSlotIndex] = useState(0);
   const [seed, setSeed] = useState(DEFAULT_WORD_SEARCH_SEED);
   const [storedShowHints, setStoredShowHints] = useState<boolean | null>(null);
   const [activityName, setActivityName] = useState("");
+  const [loadedFallbacks, setLoadedFallbacks] = useState<PhonemeWord[]>([]);
 
   const gridSize = GRID_SIZE_BY_DIFFICULTY[difficulty];
   const showHints = storedShowHints ?? DIFFICULTY_PRESETS[difficulty].showHints;
 
-  const corpusWords = useMemo<PhonemeWord[]>(() => {
-    return wordIds.flatMap((id) => {
+  const words = useMemo<PhonemeWord[]>(() => {
+    return wordIds.flatMap((id, index) => {
       const match = findCorpusWord(corpus, id);
-      return match ? [match] : [];
+      if (match) return [match];
+      const fallback = loadedFallbacks[index];
+      return fallback && fallback.id === id ? [fallback] : [];
     });
-  }, [wordIds, corpus]);
+  }, [wordIds, corpus, loadedFallbacks]);
 
-  const customValidation = useMemo<{
-    words: PhonemeWord[];
-    error: string | null;
-  }>(() => {
-    if (customEntries.length !== REQUIRED_WORD_COUNT) {
-      return { words: [], error: "Please configure five custom words." };
-    }
-
-    const words: PhonemeWord[] = [];
-    for (let i = 0; i < customEntries.length; i += 1) {
-      const entry = customEntries[i];
-      const result = validateCustomWord(entry.english, entry.phonemes, {
-        maxLength: gridSize,
-        wordIndex: i,
-      });
-      if (!result.valid || !result.word) {
-        return { words: [], error: result.error ?? `Word ${i + 1} is invalid.` };
-      }
-      words.push({
-        id: `custom-${i}-${result.word.id}`,
-        english: result.word.english,
-        phonemes: result.word.phonemes,
-      });
-    }
-
-    const uniqueEnglish = new Set(
-      words.map((w) => w.english.trim().toLowerCase()),
-    );
-    if (uniqueEnglish.size !== REQUIRED_WORD_COUNT) {
-      return {
-        words: [],
-        error: "All five custom words must have different English labels.",
-      };
-    }
-
-    return { words, error: null };
-  }, [customEntries, gridSize]);
-
-  const words = mode === "corpus" ? corpusWords : customValidation.words;
   const wordsSignature = useMemo(() => activitySignature(words), [words]);
 
   const puzzleResult = useMemo<{
     puzzle: WordSearchPuzzle | null;
     error: string | null;
   }>(() => {
-    if (mode === "custom" && customValidation.error) {
-      return { puzzle: null, error: customValidation.error };
-    }
     if (words.length !== REQUIRED_WORD_COUNT) {
       return { puzzle: null, error: null };
     }
@@ -183,7 +130,7 @@ export function WordSearchBuilder({
             : "The word search could not be generated.",
       };
     }
-  }, [mode, customValidation, words, gridSize, seed, inventory]);
+  }, [words, gridSize, seed, inventory]);
 
   const { puzzle } = puzzleResult;
   const canDraftGenerate =
@@ -194,55 +141,92 @@ export function WordSearchBuilder({
       draftSignature({
         name: activityName,
         difficulty,
-        mode,
         words,
         showHints,
         seed,
       }),
-    [activityName, difficulty, mode, words, showHints, seed],
+    [activityName, difficulty, words, showHints, seed],
   );
 
-  const applyLoadedActivity = useCallback((activity: SerializedActivity) => {
-    const loadedWords = activity.words.map(storedWordToPhonemeWord);
-    if (loadedWords.length !== REQUIRED_WORD_COUNT) {
-      throw new Error(
-        `Word Search activities need exactly ${REQUIRED_WORD_COUNT} words.`,
+  const applyLoadedActivity = useCallback(
+    (activity: SerializedActivity) => {
+      const loadedWords = activity.words.map(storedWordToPhonemeWord);
+      if (loadedWords.length !== REQUIRED_WORD_COUNT) {
+        throw new Error(
+          `Word Search activities need exactly ${REQUIRED_WORD_COUNT} words.`,
+        );
+      }
+      const nextSeed = activity.seed ?? DEFAULT_WORD_SEARCH_SEED;
+      const resolved = loadedWords.map((word) => matchCorpusWord(corpus, word));
+      const nextIds = loadedWords.map(
+        (word, index) => resolved[index]?.id ?? `loaded-${index}-${word.id}`,
       );
-    }
-    const nextSeed = activity.seed ?? DEFAULT_WORD_SEARCH_SEED;
-    setActivityName(activity.name);
-    setDifficulty(activity.difficulty);
-    setStoredShowHints(activity.showHints);
-    setSeed(nextSeed);
-    setMode("custom");
-    setCustomEntries(
-      loadedWords.map((word) => ({
-        english: word.english,
-        phonemes: word.phonemes,
-      })),
-    );
-    setActiveSlotIndex(0);
+      const fallbacks = loadedWords.map((word, index) =>
+        resolved[index]
+          ? { id: "", english: "", phonemes: [] }
+          : { ...word, id: nextIds[index] },
+      );
+      const effectiveWords = loadedWords.map(
+        (word, index) => resolved[index] ?? { ...word, id: nextIds[index] },
+      );
 
+      setActivityName(activity.name);
+      setDifficulty(activity.difficulty);
+      setStoredShowHints(activity.showHints);
+      setSeed(nextSeed);
+      setWordIds(nextIds);
+      setLoadedFallbacks(fallbacks);
+
+      return draftSignature({
+        name: activity.name,
+        difficulty: activity.difficulty,
+        words: effectiveWords,
+        showHints: activity.showHints,
+        seed: nextSeed,
+      });
+    },
+    [corpus],
+  );
+
+  const resetDraft = useCallback(() => {
+    const nextIds =
+      corpus.length >= REQUIRED_WORD_COUNT
+        ? corpus.slice(0, REQUIRED_WORD_COUNT).map((word) => word.id)
+        : Array.from({ length: REQUIRED_WORD_COUNT }, () => "");
+    const nextWords = nextIds.flatMap((id) => {
+      const match = findCorpusWord(corpus, id);
+      return match ? [match] : [];
+    });
+    setDifficulty("medium");
+    setWordIds(nextIds);
+    setSeed(DEFAULT_WORD_SEARCH_SEED);
+    setStoredShowHints(null);
+    setActivityName("");
+    setLoadedFallbacks([]);
     return draftSignature({
-      name: activity.name,
-      difficulty: activity.difficulty,
-      mode: "custom",
-      words: loadedWords,
-      showHints: activity.showHints,
-      seed: nextSeed,
+      name: "",
+      difficulty: "medium",
+      words: nextWords,
+      showHints: DIFFICULTY_PRESETS.medium.showHints,
+      seed: DEFAULT_WORD_SEARCH_SEED,
     });
-  }, []);
+  }, [corpus]);
 
-  const buildCreateInput = useCallback(() => {
-    if (!canDraftGenerate) return null;
-    return buildWordSearchCreateInput({
-      name: activityName,
-      difficulty,
-      showHints,
-      seed,
-      words,
-    });
-  }, [activityName, canDraftGenerate, difficulty, showHints, seed, words]);
+  const buildCreateInput = useCallback(
+    (nameOverride?: string) => {
+      if (!canDraftGenerate) return null;
+      const name = (nameOverride ?? activityName).trim();
+      if (!name) return null;
+      return buildWordSearchCreateInput({
+        name,
+        difficulty,
+        showHints,
+        seed,
+        words,
+      });
+    },
+    [activityName, canDraftGenerate, difficulty, showHints, seed, words],
+  );
 
   const generateDraftHtml = useCallback(() => {
     if (!puzzle || !canDraftGenerate) return null;
@@ -261,40 +245,29 @@ export function WordSearchBuilder({
   const saved = useSavedActivities({
     activityType: "word_search",
     activityName,
+    onActivityNameChange: setActivityName,
     draftSignature: signature,
     canDraftGenerate,
+    canPersist: canDraftGenerate,
     buildCreateInput,
     applyLoadedActivity,
+    resetDraft,
     generateDraftHtml,
     draftGenerateHint:
       puzzleResult.error ??
       (canDraftGenerate
         ? "Download a draft HTML file (save to the database for stored generation)"
-        : "Choose five different words that fit the grid"),
+        : "Choose five different bank words that fit the grid"),
   });
 
   function handleWordIdChange(index: number, nextId: string) {
     setWordIds((prev) => prev.map((id, i) => (i === index ? nextId : id)));
-  }
-
-  function handleCustomEntryChange(index: number, entry: CustomWordEntry) {
-    setCustomEntries((prev) =>
-      prev.map((item, i) => (i === index ? entry : item)),
-    );
-  }
-
-  function handleAppendPhonemeToSlot(phoneme: Phoneme) {
-    setCustomEntries((prev) =>
-      prev.map((item, i) =>
-        i === activeSlotIndex
-          ? { ...item, phonemes: [...item.phonemes, phoneme] }
-          : item,
-      ),
-    );
-  }
-
-  function handleLoadSampleWords() {
-    setCustomEntries(emptyCustomEntries(inventory));
+    setLoadedFallbacks((prev) => {
+      if (prev.length === 0) return prev;
+      const next = [...prev];
+      next[index] = { id: "", english: "", phonemes: [] };
+      return next;
+    });
   }
 
   function handleDifficultyChange(next: Difficulty) {
@@ -302,60 +275,89 @@ export function WordSearchBuilder({
     setStoredShowHints(null);
   }
 
+  function handleCorpusChange(next: PhonemeWord[], selectId?: string) {
+    setCorpus(next);
+    setWordIds((prev) => {
+      const mapped = prev.map((id) => {
+        if (selectId && id && !next.some((word) => word.id === id)) {
+          // Prefer newly saved id only if this slot lost its word and we have one selectId
+          return id;
+        }
+        if (!id) return id;
+        if (next.some((word) => word.id === id)) return id;
+        return "";
+      });
+      if (
+        selectId &&
+        mapped.every((id) => id !== selectId) &&
+        mapped.some((id) => id === "")
+      ) {
+        const emptyIndex = mapped.findIndex((id) => id === "");
+        if (emptyIndex >= 0) {
+          const copy = [...mapped];
+          copy[emptyIndex] = selectId;
+          return copy;
+        }
+      }
+      return mapped;
+    });
+  }
+
   return (
-    <BuilderLayout
-      config={
-        <>
-          <SavedActivitiesPanel
-            activityName={activityName}
-            onActivityNameChange={setActivityName}
-            summaries={saved.summaries}
-            selectedId={saved.selectedId}
-            onSelectedIdChange={saved.onSelectedIdChange}
-            savedId={saved.savedId}
-            isDirty={saved.isDirty}
-            canSave={saved.canSave}
-            busy={saved.busy}
-            message={saved.message}
-            error={saved.error}
-            onLoad={saved.onLoad}
-            onSave={saved.onSave}
-            onSaveAsNew={saved.onSaveAsNew}
-            onDelete={saved.onDelete}
-          />
+    <>
+      <BuilderLayout
+        library={
+          <>
+            <SavedActivitiesPanel
+              summaries={saved.summaries}
+              selectedId={saved.selectedId}
+              savedId={saved.savedId}
+              isDirty={saved.isDirty}
+              busy={saved.busy}
+              message={saved.message}
+              error={saved.error}
+              onCreateNew={saved.onCreateNew}
+              onSelectActivity={saved.onSelectActivity}
+              onRename={saved.onRename}
+              onDelete={saved.onDelete}
+            />
+            <CorpusWordManager
+              corpus={corpus}
+              inventory={inventory}
+              onCorpusChange={handleCorpusChange}
+            />
+          </>
+        }
+        config={
           <WordSearchConfigForm
             key={saved.formEpoch}
-            mode={mode}
-            onModeChange={setMode}
             wordIds={wordIds}
             words={words}
             corpus={corpus}
-            inventory={inventory}
             onWordIdChange={handleWordIdChange}
-            customEntries={customEntries}
-            onCustomEntryChange={handleCustomEntryChange}
-            onLoadSampleWords={handleLoadSampleWords}
-            customError={mode === "custom" ? customValidation.error : null}
-            activeSlotIndex={activeSlotIndex}
-            onActiveSlotIndexChange={setActiveSlotIndex}
-            onAppendPhonemeToSlot={handleAppendPhonemeToSlot}
             difficulty={difficulty}
             onDifficultyChange={handleDifficultyChange}
             canGenerate={saved.canGenerate}
             generateHint={saved.generateHint}
             onGenerate={saved.onGenerate}
+            canSave={saved.canSave}
+            canSaveAsNew={saved.canSaveAsNew}
+            saveBusy={saved.busy}
+            onSave={saved.onSave}
+            onSaveAsNew={saved.onSaveAsNew}
           />
-        </>
-      }
-      preview={
-        <WordSearchActivityPreview
-          puzzle={puzzle}
-          words={words}
-          showHints={showHints}
-          puzzleKey={`${wordsSignature}|${difficulty}|${gridSize}|${seed}`}
-          errorMessage={puzzleResult.error}
-        />
-      }
-    />
+        }
+        preview={
+          <WordSearchActivityPreview
+            puzzle={puzzle}
+            words={words}
+            showHints={showHints}
+            puzzleKey={`${wordsSignature}|${difficulty}|${gridSize}|${seed}`}
+            errorMessage={puzzleResult.error}
+          />
+        }
+      />
+      {saved.nameDialogNode}
+    </>
   );
 }

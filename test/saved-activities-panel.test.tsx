@@ -1,10 +1,9 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { SavedActivitiesPanel } from "@/components/shared/SavedActivitiesPanel";
 
 const baseProps = {
-  activityName: "Demo",
-  onActivityNameChange: vi.fn(),
   summaries: [
     {
       id: "a1",
@@ -20,49 +19,65 @@ const baseProps = {
     },
   ],
   selectedId: "a1",
-  onSelectedIdChange: vi.fn(),
   savedId: "a1" as string | null,
   isDirty: false,
-  canSave: true,
   busy: false,
   message: null as string | null,
   error: null as string | null,
-  onLoad: vi.fn(),
-  onSave: vi.fn(),
-  onSaveAsNew: vi.fn(),
+  onCreateNew: vi.fn(),
+  onSelectActivity: vi.fn(),
+  onRename: vi.fn(),
   onDelete: vi.fn(),
 };
 
 describe("SavedActivitiesPanel", () => {
-  it("enables Load and Delete when a summary is selected", () => {
-    render(<SavedActivitiesPanel {...baseProps} savedId={null} />);
-    expect(screen.getByRole("button", { name: "Load" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Save as new" })).toBeEnabled();
+  it("lists saved activities and wires select, rename, and delete", async () => {
+    const user = userEvent.setup();
+    render(<SavedActivitiesPanel {...baseProps} />);
+
+    expect(
+      screen.getByRole("list", { name: "Saved configurations" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Thin")).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", { name: /Thin.*medium/i }),
+    );
+    expect(baseProps.onSelectActivity).toHaveBeenCalledWith("a1");
+
+    await user.click(screen.getByRole("button", { name: "Rename Thin" }));
+    expect(baseProps.onRename).toHaveBeenCalledWith("a1");
+
+    await user.click(screen.getByRole("button", { name: "Delete Thin" }));
+    expect(baseProps.onDelete).toHaveBeenCalledWith("a1");
   });
 
-  it("enables Save only when a loaded activity can be saved", () => {
-    render(<SavedActivitiesPanel {...baseProps} />);
-    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
+  it("offers Create new", async () => {
+    const user = userEvent.setup();
+    render(<SavedActivitiesPanel {...baseProps} savedId={null} selectedId="" />);
+    await user.click(screen.getByRole("button", { name: "Create new" }));
+    expect(baseProps.onCreateNew).toHaveBeenCalled();
   });
 
   it("disables actions while busy", () => {
     render(<SavedActivitiesPanel {...baseProps} busy />);
-    expect(screen.getByRole("button", { name: "Load" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Save as new" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Create new" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Rename Thin" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Delete Thin" })).toBeDisabled();
   });
 
-  it("shows status message and error", () => {
+  it("shows empty state, status message, and error", () => {
     render(
       <SavedActivitiesPanel
         {...baseProps}
+        summaries={[]}
+        selectedId=""
+        savedId={null}
         message="Saved."
         error="Something failed"
       />,
     );
+    expect(screen.getByText(/No saved activities yet/i)).toBeInTheDocument();
     expect(screen.getByText("Saved.")).toBeInTheDocument();
     expect(screen.getByText("Something failed")).toBeInTheDocument();
   });

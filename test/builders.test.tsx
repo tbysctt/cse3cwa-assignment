@@ -31,12 +31,12 @@ describe("activity builders", () => {
     const firstThree = wordsForLength(TEST_BUILDER_PROPS.corpus, 3)[0]!;
     const firstFive = wordsForLength(TEST_BUILDER_PROPS.corpus, 5)[0]!;
     render(<WordleBuilder {...TEST_BUILDER_PROPS} />);
-    const generate = screen.getByRole("button", { name: "Generate HTML" });
+    const generate = screen.getByRole("button", { name: "Generate and download HTML" });
 
     expect(screen.getByRole("combobox", { name: "Phoneme length" })).toHaveValue(
       "3",
     );
-    expect(screen.getByRole("combobox", { name: "Corpus word" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "Target word" })).toHaveValue(
       firstThree.id,
     );
     expect(
@@ -53,7 +53,7 @@ describe("activity builders", () => {
       screen.getByRole("combobox", { name: "Phoneme length" }),
       "5",
     );
-    expect(screen.getByRole("combobox", { name: "Corpus word" })).toHaveValue(
+    expect(screen.getByRole("combobox", { name: "Target word" })).toHaveValue(
       firstFive.id,
     );
 
@@ -77,10 +77,10 @@ describe("activity builders", () => {
   it("lets teachers pick five HCE corpus words for Word Search", async () => {
     const user = userEvent.setup();
     render(<WordSearchBuilder {...TEST_WORD_SEARCH_PROPS} />);
-    const generate = screen.getByRole("button", { name: "Generate HTML" });
+    const generate = screen.getByRole("button", { name: "Generate and download HTML" });
 
     expect(
-      screen.getByRole("list", { name: "Word search corpus picks" }),
+      screen.getByRole("list", { name: "Word search bank picks" }),
     ).toBeInTheDocument();
     const defaultPicks = TEST_WORD_SEARCH_PROPS.corpus.slice(0, 5);
     for (const [index, word] of defaultPicks.entries()) {
@@ -88,7 +88,7 @@ describe("activity builders", () => {
         screen.getByRole("combobox", { name: `Word ${index + 1}` }),
       ).toHaveValue(word.id);
     }
-    expect(screen.queryByRole("textbox", { name: "Activity name" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create new" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: /phonemes/i })).not.toBeInTheDocument();
     expect(screen.getByText(/9×9 grid, hints on/i)).toBeInTheDocument();
 
@@ -96,7 +96,7 @@ describe("activity builders", () => {
       screen.getByRole("combobox", { name: "Word 1" }),
       "zip",
     );
-    expect(screen.getByText(/\/z\/ \/ɪ\/ \/p\//)).toBeInTheDocument();
+    expect(screen.getAllByText(/\/z\/ \/ɪ\/ \/p\//).length).toBeGreaterThan(0);
 
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Difficulty" }),

@@ -1,142 +1,162 @@
 "use client";
 
 import type { SerializedActivitySummary } from "@/lib/activity-action-types";
-import { Field } from "@/components/shared/Field";
 import { SectionCard } from "@/components/shared/SectionCard";
 
-const inputClass =
-  "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
+const iconButtonClass =
+  "inline-flex size-8 items-center justify-center rounded-(--control-radius) text-absent transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-40";
 
-const buttonClass =
-  "ui-button ui-button-secondary px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50";
+function PencilIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      className="size-4"
+      fill="currentColor"
+    >
+      <path d="M13.586 3.586a2 2 0 0 1 2.828 2.828l-8.5 8.5A2 2 0 0 1 6.5 15.5H4v-2.5a2 2 0 0 1 .586-1.414l8.5-8.5ZM12.5 5.5l2 2" />
+      <path d="M12.5 5.5 14.5 7.5" stroke="currentColor" strokeWidth="1.5" fill="none" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 20 20"
+      className="size-4"
+      fill="currentColor"
+    >
+      <path
+        fillRule="evenodd"
+        d="M6 4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v1h2a1 1 0 1 1 0 2h-1v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7H3a1 1 0 0 1 0-2h2V4Zm2 3a1 1 0 0 0-1 1v7a1 1 0 1 0 2 0V8a1 1 0 0 0-1-1Zm4 0a1 1 0 0 0-1 1v7a1 1 0 1 0 2 0V8a1 1 0 0 0-1-1Z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
 
 export function SavedActivitiesPanel({
-  activityName,
-  onActivityNameChange,
   summaries,
   selectedId,
-  onSelectedIdChange,
   savedId,
   isDirty,
-  canSave,
   busy,
   message,
   error,
-  onLoad,
-  onSave,
-  onSaveAsNew,
+  onCreateNew,
+  onSelectActivity,
+  onRename,
   onDelete,
 }: {
-  activityName: string;
-  onActivityNameChange: (name: string) => void;
   summaries: SerializedActivitySummary[];
   selectedId: string;
-  onSelectedIdChange: (id: string) => void;
   savedId: string | null;
   isDirty: boolean;
-  canSave: boolean;
   busy: boolean;
   message: string | null;
   error: string | null;
-  onLoad: () => void;
-  onSave: () => void;
-  onSaveAsNew: () => void;
-  onDelete: () => void;
+  onCreateNew: () => void;
+  onSelectActivity: (id: string) => void;
+  onRename: (id: string) => void;
+  onDelete: (id: string) => void;
 }) {
-  const hasSelection = Boolean(selectedId);
-  const canUpdate = Boolean(savedId) && canSave;
-
   return (
     <SectionCard
       title="Saved activities"
-      description="Store and reload named configurations from the database."
+      description="Create a new draft or open a saved configuration to edit."
     >
       <div className="space-y-4">
-        <Field label="Activity name" hint="Required before saving.">
-          {(id) => (
-            <input
-              id={id}
-              className={inputClass}
-              value={activityName}
-              onChange={(event) => onActivityNameChange(event.target.value)}
-              placeholder="e.g. Thin — medium Wordle"
-              disabled={busy}
-            />
-          )}
-        </Field>
-
-        <Field
-          label="Saved configurations"
-          hint={
-            savedId
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-absent">
+            {savedId
               ? isDirty
-                ? "Loaded activity has unsaved changes."
+                ? "Editing a saved activity with unsaved changes."
                 : "Showing the saved database copy."
-              : "Select a saved activity to load or delete."
-          }
-        >
-          {(id) => (
-            <select
-              id={id}
-              className={inputClass}
-              value={selectedId}
-              onChange={(event) => onSelectedIdChange(event.target.value)}
-              disabled={busy || summaries.length === 0}
-            >
-              <option value="">
-                {summaries.length === 0
-                  ? "No saved activities yet"
-                  : "Select a saved activity…"}
-              </option>
-              {summaries.map((summary) => (
-                <option key={summary.id} value={summary.id}>
-                  {summary.name} ({summary.difficulty}, {summary.wordCount}{" "}
-                  word{summary.wordCount === 1 ? "" : "s"})
-                </option>
-              ))}
-            </select>
-          )}
-        </Field>
-
-        <div className="flex flex-wrap gap-2">
+              : "Working on an unsaved draft."}
+          </p>
           <button
             type="button"
-            className={buttonClass}
-            onClick={onLoad}
-            disabled={busy || !hasSelection}
+            className="ui-button ui-button-secondary px-3 py-1.5 text-sm disabled:opacity-50"
+            onClick={onCreateNew}
+            disabled={busy}
           >
-            Load
-          </button>
-          <button
-            type="button"
-            className={buttonClass}
-            onClick={onSave}
-            disabled={busy || !canUpdate}
-            title={
-              savedId
-                ? "Update the currently loaded activity"
-                : "Load an activity first, or use Save as new"
-            }
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            className={buttonClass}
-            onClick={onSaveAsNew}
-            disabled={busy || !canSave}
-          >
-            Save as new
-          </button>
-          <button
-            type="button"
-            className={`${buttonClass} border-danger/40 text-danger`}
-            onClick={onDelete}
-            disabled={busy || !hasSelection}
-          >
-            Delete
+            Create new
           </button>
         </div>
+
+        {summaries.length === 0 ? (
+          <p className="rounded-(--control-radius) border border-dashed border-border px-3 py-6 text-center text-sm text-absent">
+            No saved activities yet. Configure one below, then use Save or Save
+            as new.
+          </p>
+        ) : (
+          <ul
+            className="divide-y divide-border overflow-hidden rounded-(--control-radius) border border-border"
+            aria-label="Saved configurations"
+          >
+            {summaries.map((summary) => {
+              const active = selectedId === summary.id;
+              return (
+                <li key={summary.id} className="flex items-stretch">
+                  <button
+                    type="button"
+                    className={[
+                      "flex min-w-0 flex-1 flex-col items-start gap-0.5 px-3 py-2.5 text-left transition-colors",
+                      active
+                        ? "bg-accent/10 text-foreground"
+                        : "bg-background hover:bg-surface-muted",
+                      busy ? "cursor-not-allowed opacity-60" : "",
+                    ].join(" ")}
+                    onClick={() => onSelectActivity(summary.id)}
+                    disabled={busy}
+                    aria-current={active ? "true" : undefined}
+                  >
+                    <span className="w-full truncate text-sm font-semibold">
+                      {summary.name}
+                    </span>
+                    <span className="text-xs text-absent">
+                      {summary.difficulty}
+                      {summary.maxAttempts != null
+                        ? ` · ${summary.maxAttempts} guesses`
+                        : ""}
+                      {` · ${summary.wordCount} word${summary.wordCount === 1 ? "" : "s"}`}
+                    </span>
+                  </button>
+                  <div className="flex items-center gap-0.5 border-l border-border px-1">
+                    <button
+                      type="button"
+                      className={iconButtonClass}
+                      aria-label={`Rename ${summary.name}`}
+                      title="Rename"
+                      disabled={busy}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onRename(summary.id);
+                      }}
+                    >
+                      <PencilIcon />
+                    </button>
+                    <button
+                      type="button"
+                      className={`${iconButtonClass} hover:text-danger`}
+                      aria-label={`Delete ${summary.name}`}
+                      title="Delete"
+                      disabled={busy}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDelete(summary.id);
+                      }}
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
         {message ? (
           <p className="text-xs font-medium text-correct">{message}</p>

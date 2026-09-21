@@ -54,8 +54,7 @@ export function WordleActivityPreview({
         />
       ) : (
         <p className="rounded-(--control-radius) border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
-          Select a corpus word or enter a valid custom word to preview the
-          activity.
+          Select a word from the bank to preview the activity.
         </p>
       )}
     </ActivityPreviewShell>

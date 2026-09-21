@@ -181,7 +181,7 @@ describe("Wordle components", () => {
     expect(screen.queryByText(/Show phoneme hints/i)).not.toBeInTheDocument();
 
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Corpus word" }),
+      screen.getByRole("combobox", { name: "Target word" }),
       "ship",
     );
     expect(onWordIdChange).toHaveBeenCalledWith("ship");

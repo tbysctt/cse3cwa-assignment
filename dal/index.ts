@@ -15,11 +15,16 @@ export {
 } from "./activities";
 
 export {
+  createCorpusWord,
+  deleteCorpusWord,
   findCorpusWordBySlug,
   getKeyboardRows,
   listCorpusWords,
   listPhonemeInventory,
+  updateCorpusWord,
 } from "./reference";
+
+export type { CorpusWordInput } from "./reference";
 
 export type {
   ActivityConfiguration,
