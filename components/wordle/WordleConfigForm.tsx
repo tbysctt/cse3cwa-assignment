@@ -15,6 +15,7 @@ const inputClass =
   "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
 
 export function WordleConfigForm({
+  title,
   length,
   onLengthChange,
   wordId,
@@ -33,6 +34,7 @@ export function WordleConfigForm({
   onSave,
   onSaveAsNew,
 }: {
+  title: string;
   length: PhonemeLength;
   onLengthChange: (next: PhonemeLength) => void;
   wordId: string;
@@ -59,7 +61,7 @@ export function WordleConfigForm({
 
   return (
     <SectionCard
-      title="Configure activity"
+      title={title}
       description="Choose a word from the database word bank and a difficulty. The live preview updates as you go."
     >
       <div className="flex flex-col gap-5">

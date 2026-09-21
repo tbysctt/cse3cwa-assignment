@@ -14,6 +14,7 @@ const inputClass =
   "ui-control w-full px-3 py-2 text-sm focus:border-accent focus:outline-none";
 
 export function WordSearchConfigForm({
+  title,
   wordIds,
   words = [],
   onWordIdChange,
@@ -28,6 +29,7 @@ export function WordSearchConfigForm({
   onSave,
   onSaveAsNew,
 }: {
+  title: string;
   wordIds: string[];
   words?: PhonemeWord[];
   onWordIdChange: (index: number, nextId: string) => void;
@@ -47,7 +49,7 @@ export function WordSearchConfigForm({
 
   return (
     <SectionCard
-      title="Configure activity"
+      title={title}
       description="Choose five words from the database word bank and a difficulty. The live preview regenerates as you change the list."
     >
       <div className="flex flex-col gap-5">

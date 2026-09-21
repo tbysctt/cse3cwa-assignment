@@ -308,6 +308,11 @@ export function WordleBuilder({
         config={
           <WordleConfigForm
             key={saved.formEpoch}
+            title={
+              saved.savedId && activityName.trim()
+                ? activityName.trim()
+                : "New activity"
+            }
             length={length}
             onLengthChange={handleLengthChange}
             wordId={targetWord?.id ?? ""}

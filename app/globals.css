@@ -139,11 +139,16 @@ body {
   padding: 0.625rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;
+  cursor: pointer;
   transition:
     background-color 150ms,
     border-color 150ms,
     color 150ms,
     opacity 150ms;
+}
+
+.ui-button:disabled {
+  cursor: not-allowed;
 }
 
 .ui-button-primary {

@@ -346,6 +346,11 @@ export function WordSearchBuilder({
         config={
           <WordSearchConfigForm
             key={saved.formEpoch}
+            title={
+              saved.savedId && activityName.trim()
+                ? activityName.trim()
+                : "New activity"
+            }
             wordIds={wordIds}
             words={bankWords}
             onWordIdChange={handleWordIdChange}

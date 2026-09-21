@@ -163,6 +163,7 @@ describe("Wordle components", () => {
     const onWordIdChange = vi.fn();
     render(
       <WordleConfigForm
+        title="New activity"
         length={3}
         onLengthChange={onLengthChange}
         wordId="thin"
