@@ -9,6 +9,7 @@ import {
   DENSITY_COOKIE,
   TEXT_SIZE_COOKIE,
   THEME_COOKIE,
+  THEMES,
   parseDensity,
   parseTextSize,
   parseTheme,
@@ -44,6 +45,22 @@ describe("Persistent preferences parser", () => {
     expect(parseDensity("compact")).toBe("compact");
     expect(parseDensity("tight")).toBe("comfortable");
     expect(parseDensity(undefined)).toBe("comfortable");
+  });
+
+  it("exposes theme option metadata for the settings UI", () => {
+    expect(THEMES.map((theme) => theme.value)).toEqual([
+      "light",
+      "dark",
+      "system",
+    ]);
+    expect(THEMES.map((theme) => theme.label)).toEqual([
+      "Light",
+      "Dark",
+      "System",
+    ]);
+    for (const theme of THEMES) {
+      expect(theme.description.trim().length).toBeGreaterThan(0);
+    }
   });
 });
 

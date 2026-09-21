@@ -176,6 +176,9 @@ describe("Wordle components", () => {
       />,
     );
 
+    expect(
+      screen.getByRole("heading", { level: 2, name: "New activity" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/\/θ\/ \/ɪ\/ \/n\//)).toBeInTheDocument();
     expect(screen.getByText(/6 guesses, hints on/i)).toBeInTheDocument();
     expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
@@ -198,6 +201,30 @@ describe("Wordle components", () => {
       "hard",
     );
     expect(onDifficultyChange).toHaveBeenCalledWith("hard");
+  });
+
+  it("shows a saved activity name as the configure panel title", () => {
+    render(
+      <WordleConfigForm
+        title="Thin practice"
+        length={3}
+        onLengthChange={vi.fn()}
+        wordId="thin"
+        onWordIdChange={vi.fn()}
+        lengthWords={HCE_WORDS_3}
+        difficulty="medium"
+        onDifficultyChange={vi.fn()}
+        canGenerate
+        onGenerate={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Thin practice" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "New activity" }),
+    ).not.toBeInTheDocument();
   });
 });
 

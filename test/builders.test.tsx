@@ -21,9 +21,30 @@ vi.mock("@/app/actions/activities", () => ({
   generateStoredActivityHtmlAction: vi.fn(),
 }));
 
+vi.mock("@/app/actions/words", () => ({
+  createWordAction: vi.fn(),
+  updateWordAction: vi.fn(),
+  deleteWordAction: vi.fn(),
+  listWordsAction: vi.fn(),
+}));
+
 describe("activity builders", () => {
   beforeEach(() => {
     vi.mocked(downloadTextFile).mockClear();
+  });
+
+  it("shows New activity as the configure panel title when unsaved", () => {
+    render(<WordleBuilder {...TEST_BUILDER_PROPS} />);
+    expect(
+      screen.getByRole("heading", { level: 2, name: "New activity" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows New activity on Word Search when unsaved", () => {
+    render(<WordSearchBuilder {...TEST_WORD_SEARCH_PROPS} />);
+    expect(
+      screen.getByRole("heading", { level: 2, name: "New activity" }),
+    ).toBeInTheDocument();
   });
 
   it("downloads a valid Wordle from the HCE corpus with difficulty presets", async () => {
