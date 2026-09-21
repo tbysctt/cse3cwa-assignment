@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
 import {
   clampMaxAttempts,
   evaluateGuess,

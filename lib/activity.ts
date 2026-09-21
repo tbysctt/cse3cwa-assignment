@@ -1,5 +1,4 @@
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
-
+import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
 export type Difficulty = "easy" | "medium" | "hard";
 
 export const DIFFICULTY_OPTIONS: ReadonlyArray<{

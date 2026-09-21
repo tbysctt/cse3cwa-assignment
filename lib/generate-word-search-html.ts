@@ -1,4 +1,4 @@
-import type { PhonemeWord } from "@/data/phonemes";
+import type { PhonemeWord } from "@/lib/phoneme-types";
 import type { Difficulty } from "@/lib/activity";
 import { escapeHtml, toJson } from "@/lib/html";
 import {

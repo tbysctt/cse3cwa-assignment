@@ -1,6 +1,10 @@
 "use client";
 
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import type {
+  KeyboardSlot,
+  Phoneme,
+  PhonemeWord,
+} from "@/lib/phoneme-types";
 import { ActivityPreviewShell } from "@/components/shared/ActivityPreviewShell";
 import { activitySignature } from "@/lib/activity";
 import { WordleGame } from "./WordleGame";
@@ -14,15 +18,19 @@ import { WordleGame } from "./WordleGame";
 export function WordleActivityPreview({
   target,
   inventory,
+  keyboardRows,
   maxAttempts,
   showHints,
 }: {
   target: PhonemeWord | null;
   inventory: Phoneme[];
+  keyboardRows: KeyboardSlot[][];
   maxAttempts: number;
   showHints: boolean;
 }) {
-  const gameKey = target ? `${activitySignature([target])}|${maxAttempts}` : "empty";
+  const gameKey = target
+    ? `${activitySignature([target])}|${maxAttempts}`
+    : "empty";
 
   return (
     <ActivityPreviewShell
@@ -40,12 +48,13 @@ export function WordleActivityPreview({
           key={gameKey}
           target={target}
           inventory={inventory}
+          keyboardRows={keyboardRows}
           maxAttempts={maxAttempts}
           showHints={showHints}
         />
       ) : (
-        <p className="rounded-[var(--control-radius)] border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
-          Select a corpus word or enter a valid custom word to preview the activity.
+        <p className="rounded-(--control-radius) border border-danger/40 bg-danger/10 p-3 text-sm text-danger">
+          Select a word from the bank to preview the activity.
         </p>
       )}
     </ActivityPreviewShell>

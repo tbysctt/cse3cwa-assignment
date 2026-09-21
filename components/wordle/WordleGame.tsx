@@ -1,13 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
-import { phonemeWordDisplay } from "@/data/phonemes";
-import {
-  evaluateGuess,
-  isWinningGuess,
-  type GuessResult,
-} from "@/lib/wordle";
+import type { KeyboardSlot, Phoneme, PhonemeWord } from "@/lib/phoneme-types";
+import { phonemeWordDisplay } from "@/lib/phoneme-types";
+import { evaluateGuess, isWinningGuess, type GuessResult } from "@/lib/wordle";
 import { PhonemeKeyboard } from "./PhonemeKeyboard";
 import { WordleGrid, type SubmittedWordleRow } from "./WordleGrid";
 
@@ -21,11 +17,13 @@ function isEditableTarget(target: EventTarget | null): boolean {
 export function WordleGame({
   target,
   inventory,
+  keyboardRows,
   maxAttempts,
   showHints,
 }: {
   target: PhonemeWord;
   inventory: Phoneme[];
+  keyboardRows: KeyboardSlot[][];
   maxAttempts: number;
   showHints: boolean;
 }) {
@@ -33,7 +31,9 @@ export function WordleGame({
   const [current, setCurrent] = useState<Phoneme[]>([]);
   const [submitted, setSubmitted] = useState<SubmittedWordleRow[]>([]);
   const [message, setMessage] = useState("");
-  const [messageKind, setMessageKind] = useState<"info" | "win" | "lose">("info");
+  const [messageKind, setMessageKind] = useState<"info" | "win" | "lose">(
+    "info",
+  );
   const [won, setWon] = useState(false);
 
   const locked = won || submitted.length >= maxAttempts;
@@ -106,12 +106,8 @@ export function WordleGame({
           className="mt-3 inline-flex flex-wrap justify-center gap-2 text-xs text-absent"
           aria-label="Activity settings"
         >
-          <span className="ui-chip">
-            {maxAttempts} guesses
-          </span>
-          <span className="ui-chip">
-            {length} phonemes
-          </span>
+          <span className="ui-chip">{maxAttempts} guesses</span>
+          <span className="ui-chip">{length} phonemes</span>
         </div>
       </div>
 
@@ -129,6 +125,7 @@ export function WordleGame({
         <div className="flex min-w-0 flex-col gap-4">
           <PhonemeKeyboard
             inventory={inventory}
+            keyboardRows={keyboardRows}
             showHint={showHints}
             disabled={locked}
             onKeyPress={pushPhoneme}
@@ -164,7 +161,7 @@ export function WordleGame({
           correct
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-3 rounded-sm border border-present bg-present [background-image:repeating-linear-gradient(45deg,rgba(255,255,255,0.3)_0_2px,transparent_2px_4px)]" />
+          <span className="size-3 rounded-sm border border-present bg-present bg-[repeating-linear-gradient(45deg,rgba(255,255,255,0.3)_0_2px,transparent_2px_4px)]" />
           wrong position
         </span>
         <span className="inline-flex items-center gap-1.5">
@@ -177,7 +174,7 @@ export function WordleGame({
         role="status"
         aria-live="polite"
         className={[
-          "mt-4 min-h-10 rounded-[var(--control-radius)] px-3 py-2 text-sm font-semibold",
+          "mt-4 min-h-10 rounded-(--control-radius) px-3 py-2 text-sm font-semibold",
           messageKind === "win"
             ? "border border-correct/50 bg-correct/10 text-correct"
             : messageKind === "lose"

@@ -4,13 +4,11 @@ import {
   HCE_WORDS_3,
   HCE_WORDS_4,
   HCE_WORDS_5,
-  wordsForLength,
-} from "@/data/hce-corpus";
-import {
   HCE_KEYBOARD_ROWS,
   HCE_PHONEME_INVENTORY,
-} from "@/data/hce-keyboard";
-import { WORDLE_TARGET, WORD_SEARCH_WORDS } from "@/data/phonemes";
+  WORDLE_TARGET,
+  WORD_SEARCH_WORDS,
+} from "./fixtures";
 
 describe("HCE keyboard and corpus", () => {
   it("exposes the fixed 12-row keyboard with 43 phonemes and blank slots", () => {
@@ -65,8 +63,8 @@ describe("HCE keyboard and corpus", () => {
     }
   });
 
-  it("canonicalizes great with ɡ and keeps thin as the default Wordle target", () => {
-    const great = wordsForLength(4).find((word) => word.id === "great");
+  it("canonicalises great with ɡ and keeps thin as the default Wordle target", () => {
+    const great = HCE_WORDS_4.find((word) => word.id === "great");
     expect(great?.phonemes.map((phoneme) => phoneme.ipa)).toEqual([
       "ɡ",
       "ɹ",

@@ -1,4 +1,4 @@
-import type { Phoneme } from "@/data/phonemes";
+import type { Phoneme } from "@/lib/phoneme-types";
 import type { TileStatus } from "@/lib/wordle";
 import { WordleCell } from "./WordleCell";
 

@@ -1,3 +1,4 @@
+import { listWords, listPhonemeInventory } from "@/dal";
 import { WordSearchBuilder } from "@/components/word-search/WordSearchBuilder";
 import type { Metadata } from "next";
 
@@ -5,7 +6,12 @@ export const metadata: Metadata = {
   title: "Word Search",
 };
 
-export default function WordSearchPage() {
+export default async function WordSearchPage() {
+  const [inventory, words] = await Promise.all([
+    listPhonemeInventory(),
+    listWords(),
+  ]);
+
   return (
     <div className="flex flex-col gap-(--section-gap)">
       <header>
@@ -18,7 +24,7 @@ export default function WordSearchPage() {
           HTML file.
         </p>
       </header>
-      <WordSearchBuilder />
+      <WordSearchBuilder inventory={inventory} words={words} />
     </div>
   );
 }

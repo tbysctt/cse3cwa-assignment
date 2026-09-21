@@ -1,0 +1,52 @@
+# Dependencies (installed inside Docker)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Next.js build outputs
+.next/
+out/
+dist/
+build/
+.vercel/
+
+# Tests and coverage
+coverage/
+test/
+vitest.config.*
+*.test.*
+*.spec.*
+
+# Local development and editor files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.log
+
+# Environment variables
+.env
+.env*.local
+.env.development
+.env.test
+.env.production.local
+
+# Docker configuration
+Dockerfile*
+.dockerignore
+compose.yaml
+compose.yml
+docker-compose*.yaml
+docker-compose*.yml
+
+# Documentation and misc
+*.md
+.github/
+.cursor/
+.DS_Store
+*.tsbuildinfo
+AGENTS.md
+CLAUDE.md
+eslint.config.*

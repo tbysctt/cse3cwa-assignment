@@ -1,4 +1,4 @@
-import type { Phoneme, PhonemeWord } from "@/data/phonemes";
+import type { Phoneme, PhonemeWord } from "@/lib/phoneme-types";
 import type { Difficulty } from "@/lib/activity";
 
 export type TileStatus = "correct" | "present" | "absent";

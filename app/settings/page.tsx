@@ -1,4 +1,5 @@
 import { PreferenceControls } from "@/components/settings/PreferenceControls";
+import { SectionCard } from "@/components/shared/SectionCard";
 import {
   DENSITY_COOKIE,
   TEXT_SIZE_COOKIE,
@@ -21,20 +22,24 @@ export default async function SettingsPage() {
   const density = parseDensity(cookieStore.get(DENSITY_COOKIE)?.value);
 
   return (
-    <div className="mx-auto flex flex-col gap-(--section-gap)">
+    <div className="flex flex-col gap-(--section-gap)">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="mt-1 text-sm text-absent">
-          Manage your persistent interface preferences. Choices are saved in cookies and applied across sessions.
+        <p className="mt-2 max-w-2xl text-absent">
+          Manage your persistent interface preferences. Choices are saved in
+          cookies and applied across sessions.
         </p>
       </header>
-      <section className="ui-surface ui-surface-pad">
+      <SectionCard
+        title="Preferences"
+        description="Colour theme, text size, and layout density for this browser."
+      >
         <PreferenceControls
           theme={theme}
           textSize={textSize}
           density={density}
         />
-      </section>
+      </SectionCard>
     </div>
   );
 }

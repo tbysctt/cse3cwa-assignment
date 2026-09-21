@@ -1,6 +1,8 @@
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
-import { HCE_PHONEME_INVENTORY } from "@/data/hce-keyboard";
+import { HCE_PHONEME_INVENTORY,
+  HCE_KEYBOARD_ROWS } from "./fixtures";
+// keyboardRows added below
 import { parsePhonemeSequence } from "@/lib/custom-phonemes";
 import { generateWordleHtml } from "@/lib/generate-wordle-html";
 import { generateWordSearchHtml } from "@/lib/generate-word-search-html";
@@ -17,6 +19,7 @@ describe("Custom activity standalone HTML exports", () => {
     const html = generateWordleHtml({
       target: customTarget,
       inventory: HCE_PHONEME_INVENTORY,
+      keyboardRows: HCE_KEYBOARD_ROWS,
       maxAttempts: 6,
       difficulty: "medium",
       showHints: true,

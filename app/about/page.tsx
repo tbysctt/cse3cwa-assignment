@@ -30,6 +30,13 @@ export default function AboutPage() {
           planned for later assessments so the builder can rotate through many
           phoneme words with richer generation options.
         </p>
+        <p className="leading-relaxed text-foreground/90">
+          <strong>Assessment 2 adds database persistence.</strong> Teachers can
+          save, load, update, and delete named Wordle and Word Search
+          configurations in PostgreSQL — including phoneme-based word lists and
+          activity settings — then generate downloadable HTML from that stored
+          data rather than only temporary frontend values.
+        </p>
       </section>
 
       <section className="grid gap-4 sm:grid-cols-2">
@@ -50,26 +57,6 @@ export default function AboutPage() {
             the English spelling of each word once found.
           </p>
         </article>
-      </section>
-
-      <section className="ui-surface p-5">
-        <h2 className="text-xl font-semibold">Guide</h2>
-        <p className="mt-2 text-sm text-absent">
-          A walkthrough of the code, commits and functionality of the activity
-          builder.
-        </p>
-        <div className="mt-4 aspect-video overflow-hidden rounded-(--control-radius) border border-border bg-surface-muted">
-          <video
-            className="h-full w-full"
-            controls
-            preload="metadata"
-            aria-label="How to use the Phoneme Activity Builder"
-          >
-            <source src="/guide.mp4" type="video/mp4" />
-            Your browser does not support the video tag. Add{" "}
-            <code>public/guide.mp4</code> or embed an external video here.
-          </video>
-        </div>
       </section>
     </div>
   );

@@ -5,13 +5,13 @@ import { WordSearchGame } from "@/components/word-search/WordSearchGame";
 import { PhonemeKeyboard } from "@/components/wordle/PhonemeKeyboard";
 import { WordleConfigForm } from "@/components/wordle/WordleConfigForm";
 import { WordleGame } from "@/components/wordle/WordleGame";
-import { HCE_WORDS_4, HCE_WORDS_5, wordsForLength } from "@/data/hce-corpus";
-import { HCE_KEYBOARD_ROWS, HCE_PHONEME_INVENTORY } from "@/data/hce-keyboard";
+import { HCE_WORDS_3, HCE_WORDS_4, HCE_WORDS_5 } from "./fixtures";
+import { HCE_KEYBOARD_ROWS, HCE_PHONEME_INVENTORY } from "./fixtures";
 import {
   PHONEME_INVENTORY,
   WORDLE_TARGET,
   WORD_SEARCH_WORDS,
-} from "@/data/phonemes";
+} from "./fixtures";
 import {
   cellsForPlacement,
   generateWordSearch,
@@ -23,6 +23,7 @@ describe("PhonemeKeyboard", () => {
     render(
       <PhonemeKeyboard
         inventory={HCE_PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         showHint={false}
         onKeyPress={() => undefined}
       />,
@@ -60,6 +61,7 @@ describe("Wordle components", () => {
       <WordleGame
         target={WORDLE_TARGET}
         inventory={PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         maxAttempts={2}
         showHints={false}
       />,
@@ -85,6 +87,7 @@ describe("Wordle components", () => {
         key={four.id}
         target={four}
         inventory={PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         maxAttempts={2}
         showHints={false}
       />,
@@ -104,6 +107,7 @@ describe("Wordle components", () => {
         key={five.id}
         target={five}
         inventory={PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         maxAttempts={2}
         showHints={false}
       />,
@@ -122,6 +126,7 @@ describe("Wordle components", () => {
       <WordleGame
         target={WORDLE_TARGET}
         inventory={PHONEME_INVENTORY}
+        keyboardRows={HCE_KEYBOARD_ROWS}
         maxAttempts={2}
         showHints
       />,
@@ -138,6 +143,7 @@ describe("Wordle components", () => {
         <WordleGame
           target={WORDLE_TARGET}
           inventory={PHONEME_INVENTORY}
+          keyboardRows={HCE_KEYBOARD_ROWS}
           maxAttempts={2}
           showHints={false}
         />
@@ -157,11 +163,12 @@ describe("Wordle components", () => {
     const onWordIdChange = vi.fn();
     render(
       <WordleConfigForm
+        title="New activity"
         length={3}
         onLengthChange={onLengthChange}
         wordId="thin"
         onWordIdChange={onWordIdChange}
-        lengthWords={wordsForLength(3)}
+        lengthWords={HCE_WORDS_3}
         difficulty="medium"
         onDifficultyChange={onDifficultyChange}
         canGenerate
@@ -169,13 +176,16 @@ describe("Wordle components", () => {
       />,
     );
 
+    expect(
+      screen.getByRole("heading", { level: 2, name: "New activity" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/\/θ\/ \/ɪ\/ \/n\//)).toBeInTheDocument();
     expect(screen.getByText(/6 guesses, hints on/i)).toBeInTheDocument();
     expect(screen.queryByRole("spinbutton")).not.toBeInTheDocument();
     expect(screen.queryByText(/Show phoneme hints/i)).not.toBeInTheDocument();
 
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Corpus word" }),
+      screen.getByRole("combobox", { name: "Target word" }),
       "ship",
     );
     expect(onWordIdChange).toHaveBeenCalledWith("ship");
@@ -191,6 +201,30 @@ describe("Wordle components", () => {
       "hard",
     );
     expect(onDifficultyChange).toHaveBeenCalledWith("hard");
+  });
+
+  it("shows a saved activity name as the configure panel title", () => {
+    render(
+      <WordleConfigForm
+        title="Thin practice"
+        length={3}
+        onLengthChange={vi.fn()}
+        wordId="thin"
+        onWordIdChange={vi.fn()}
+        lengthWords={HCE_WORDS_3}
+        difficulty="medium"
+        onDifficultyChange={vi.fn()}
+        canGenerate
+        onGenerate={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: "Thin practice" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "New activity" }),
+    ).not.toBeInTheDocument();
   });
 });
 

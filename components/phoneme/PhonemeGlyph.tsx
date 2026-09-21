@@ -1,7 +1,7 @@
 "use client";
 
-import type { Phoneme } from "@/data/phonemes";
-import { formatIpa, hintLabel } from "@/data/phonemes";
+import type { Phoneme } from "@/lib/phoneme-types";
+import { formatIpa, hintLabel } from "@/lib/phoneme-types";
 import { useId, useState } from "react";
 
 type PhonemeGlyphProps = {
