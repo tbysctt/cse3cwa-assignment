@@ -17,7 +17,7 @@ export {
 export {
   createWord,
   deleteWord,
-  findWordBySlug,
+  findWordById,
   getKeyboardRows,
   listPhonemeInventory,
   listWords,

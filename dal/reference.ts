@@ -17,16 +17,6 @@ export type BankWordInput = {
   phonemes: PhonemeInput[];
 };
 
-function slugifyEnglish(english: string): string {
-  const base =
-    english
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "word";
-  return base;
-}
-
 function validateWordInput(input: BankWordInput): {
   english: string;
   phonemes: PhonemeInput[];
@@ -67,26 +57,25 @@ function validateWordInput(input: BankWordInput): {
   };
 }
 
-async function ensureUniqueSlug(
-  base: string,
+async function assertUniqueEnglish(
+  english: string,
   excludeId?: string,
-): Promise<string> {
+): Promise<void> {
   const db = getDb();
-  let candidate = base;
-  let suffix = 2;
-  for (;;) {
-    const existing = await db
-      .select({ id: words.id })
-      .from(words)
-      .where(
-        excludeId
-          ? and(eq(words.slug, candidate), ne(words.id, excludeId))
-          : eq(words.slug, candidate),
-      )
-      .limit(1);
-    if (existing.length === 0) return candidate;
-    candidate = `${base}-${suffix}`;
-    suffix += 1;
+  const existing = await db
+    .select({ id: words.id })
+    .from(words)
+    .where(
+      excludeId
+        ? and(eq(words.english, english), ne(words.id, excludeId))
+        : eq(words.english, english),
+    )
+    .limit(1);
+  if (existing.length > 0) {
+    throw new DalValidationError(
+      `A word with English label “${english}” already exists.`,
+      "english",
+    );
   }
 }
 
@@ -121,10 +110,7 @@ async function resolvePhonemeIds(
   return ids;
 }
 
-/**
- * Load a bank word by internal UUID.
- * Returned `PhonemeWord.id` is the public **slug** (not the UUID).
- */
+/** Load a bank word. `PhonemeWord.id` is the row UUID. */
 async function loadWordById(id: string): Promise<PhonemeWord | null> {
   const db = getDb();
   const [row] = await db.select().from(words).where(eq(words.id, id)).limit(1);
@@ -152,7 +138,7 @@ async function loadWordById(id: string): Promise<PhonemeWord | null> {
   }
 
   return {
-    id: row.slug,
+    id: row.id,
     english: row.english,
     phonemes: sequence.filter(Boolean),
   };
@@ -241,38 +227,27 @@ export async function listWords(options?: {
     phonemesByWord.set(link.wordId, list);
   }
 
-  // PhonemeWord.id is the public slug for bank rows.
   return wordRows.map((row) => ({
-    id: row.slug,
+    id: row.id,
     english: row.english,
     phonemes: (phonemesByWord.get(row.id) ?? []).filter(Boolean),
   }));
 }
 
-export async function findWordBySlug(
-  slug: string,
-): Promise<PhonemeWord | null> {
-  const db = getDb();
-  const [row] = await db
-    .select()
-    .from(words)
-    .where(eq(words.slug, slug))
-    .limit(1);
-  if (!row) return null;
-  return loadWordById(row.id);
+export async function findWordById(id: string): Promise<PhonemeWord | null> {
+  return loadWordById(id);
 }
 
 export async function createWord(input: BankWordInput): Promise<PhonemeWord> {
   const validated = validateWordInput(input);
-  const db = getDb();
-  const slug = await ensureUniqueSlug(slugifyEnglish(validated.english));
+  await assertUniqueEnglish(validated.english);
   const phonemeIds = await resolvePhonemeIds(validated.phonemes);
+  const db = getDb();
 
   const created = await db.transaction(async (tx) => {
     const [inserted] = await tx
       .insert(words)
       .values({
-        slug,
         english: validated.english,
         phonemeLength: validated.length,
       })
@@ -298,7 +273,7 @@ export async function createWord(input: BankWordInput): Promise<PhonemeWord> {
 }
 
 export async function updateWord(
-  slug: string,
+  id: string,
   input: BankWordInput,
 ): Promise<PhonemeWord> {
   const validated = validateWordInput(input);
@@ -306,23 +281,19 @@ export async function updateWord(
   const [existing] = await db
     .select()
     .from(words)
-    .where(eq(words.slug, slug))
+    .where(eq(words.id, id))
     .limit(1);
   if (!existing) {
-    throw new DalNotFoundError(`Word “${slug}” not found.`);
+    throw new DalNotFoundError(`Word “${id}” not found.`);
   }
 
-  const nextSlug = await ensureUniqueSlug(
-    slugifyEnglish(validated.english),
-    existing.id,
-  );
+  await assertUniqueEnglish(validated.english, existing.id);
   const phonemeIds = await resolvePhonemeIds(validated.phonemes);
 
   await db.transaction(async (tx) => {
     await tx
       .update(words)
       .set({
-        slug: nextSlug,
         english: validated.english,
         phonemeLength: validated.length,
       })
@@ -346,15 +317,15 @@ export async function updateWord(
   return word;
 }
 
-export async function deleteWord(slug: string): Promise<void> {
+export async function deleteWord(id: string): Promise<void> {
   const db = getDb();
   const [existing] = await db
     .select({ id: words.id })
     .from(words)
-    .where(eq(words.slug, slug))
+    .where(eq(words.id, id))
     .limit(1);
   if (!existing) {
-    throw new DalNotFoundError(`Word “${slug}” not found.`);
+    throw new DalNotFoundError(`Word “${id}” not found.`);
   }
   await db.delete(words).where(eq(words.id, existing.id));
 }

@@ -56,10 +56,9 @@ CREATE TABLE "word_phonemes" (
 --> statement-breakpoint
 CREATE TABLE "words" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"slug" text NOT NULL,
 	"english" text NOT NULL,
 	"phoneme_length" integer NOT NULL,
-	CONSTRAINT "words_slug_unique" UNIQUE("slug"),
+	CONSTRAINT "words_english_unique" UNIQUE("english"),
 	CONSTRAINT "words_phoneme_length_check" CHECK ("words"."phoneme_length" in (3, 4, 5))
 );
 --> statement-breakpoint

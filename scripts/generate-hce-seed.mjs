@@ -235,11 +235,11 @@ const wordPhonemeInserts = [];
 for (const [length, wordList] of wordGroups) {
   for (const [english, ...ipas] of wordList) {
     wordInserts.push(
-      `INSERT INTO "words" ("slug", "english", "phoneme_length") VALUES (${sqlStr(english)}, ${sqlStr(english)}, ${length}) ON CONFLICT ("slug") DO NOTHING;`,
+      `INSERT INTO "words" ("english", "phoneme_length") VALUES (${sqlStr(english)}, ${length}) ON CONFLICT ("english") DO NOTHING;`,
     );
     ipas.forEach((ipa, position) => {
       wordPhonemeInserts.push(
-        `INSERT INTO "word_phonemes" ("word_id", "position", "phoneme_id") SELECT w."id", ${position}, p."id" FROM "words" w, "phonemes" p WHERE w."slug" = ${sqlStr(english)} AND p."ipa" = ${sqlStr(ipa)} ON CONFLICT ("word_id", "position") DO NOTHING;`,
+        `INSERT INTO "word_phonemes" ("word_id", "position", "phoneme_id") SELECT w."id", ${position}, p."id" FROM "words" w, "phonemes" p WHERE w."english" = ${sqlStr(english)} AND p."ipa" = ${sqlStr(ipa)} ON CONFLICT ("word_id", "position") DO NOTHING;`,
       );
     });
   }

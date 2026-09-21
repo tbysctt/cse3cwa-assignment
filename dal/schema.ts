@@ -102,8 +102,7 @@ export const words = pgTable(
   "words",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    slug: text("slug").notNull().unique(),
-    english: text("english").notNull(),
+    english: text("english").notNull().unique(),
     phonemeLength: integer("phoneme_length").notNull(),
   },
   (table) => [

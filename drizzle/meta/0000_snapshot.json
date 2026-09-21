@@ -1,5 +1,5 @@
 {
-  "id": "9a53c751-b099-4750-9b51-b6de7f246cdc",
+  "id": "6fbb5caa-af34-49c8-b563-c6fe0abd8523",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -402,12 +402,6 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
         "english": {
           "name": "english",
           "type": "text",
@@ -425,11 +419,11 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "words_slug_unique": {
-          "name": "words_slug_unique",
+        "words_english_unique": {
+          "name": "words_english_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "slug"
+            "english"
           ]
         }
       },

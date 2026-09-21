@@ -46,11 +46,11 @@ export async function createWordAction(
 }
 
 export async function updateWordAction(
-  slug: string,
+  id: string,
   input: BankWordInput,
 ): Promise<ActionResult<PhonemeWord>> {
   try {
-    const word = await updateWord(slug, input);
+    const word = await updateWord(id, input);
     return { ok: true, data: word };
   } catch (error) {
     return toActionError(error);
@@ -58,11 +58,11 @@ export async function updateWordAction(
 }
 
 export async function deleteWordAction(
-  slug: string,
+  id: string,
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    await deleteWord(slug);
-    return { ok: true, data: { id: slug } };
+    await deleteWord(id);
+    return { ok: true, data: { id } };
   } catch (error) {
     return toActionError(error);
   }

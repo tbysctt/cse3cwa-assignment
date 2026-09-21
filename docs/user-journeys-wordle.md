@@ -78,7 +78,8 @@ Draft vs stored generate modes unchanged (clean saved → DB snapshot HTML; othe
 | --- | --- |
 | No bank words for length | Target select empty; Save / Generate disabled |
 | Loaded activity word missing from bank | Preview still uses stored snapshot; picker may not match until rematched by english |
-| Bank word edited (slug change) | List updates; selection follows new id when edited from this page |
+| Bank word english/phonemes edited | List updates; id stays the same UUID |
+| Bank word deleted | Picker rematches by english or uses loaded snapshot fallback |
 | Invalid editor input | Modal validation blocks Save word |
 
 ---
