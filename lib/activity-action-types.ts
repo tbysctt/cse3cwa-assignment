@@ -7,7 +7,7 @@ export type ActionResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string; field?: string };
 
-export type SerializedActivity = Omit<
+export type SerialisedActivity = Omit<
   ActivityConfiguration,
   "createdAt" | "updatedAt"
 > & {
@@ -15,7 +15,7 @@ export type SerializedActivity = Omit<
   updatedAt: string;
 };
 
-export type SerializedActivitySummary = Omit<
+export type SerialisedActivitySummary = Omit<
   ActivitySummary,
   "createdAt" | "updatedAt"
 > & {

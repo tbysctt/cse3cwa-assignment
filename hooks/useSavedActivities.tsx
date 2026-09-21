@@ -10,8 +10,8 @@ import {
   updateActivityAction,
 } from "@/app/actions/activities";
 import type {
-  SerializedActivity,
-  SerializedActivitySummary,
+  SerialisedActivity,
+  SerialisedActivitySummary,
 } from "@/lib/activity-action-types";
 import type { ActivityType, CreateActivityInput } from "@/dal/types";
 import { downloadTextFile } from "@/lib/download";
@@ -44,7 +44,7 @@ export type UseSavedActivitiesOptions = {
   /** Valid enough to persist (e.g. Wordle 3/4/5 phonemes). */
   canPersist: boolean;
   buildCreateInput: (nameOverride?: string) => CreateActivityInput | null;
-  applyLoadedActivity: (activity: SerializedActivity) => string;
+  applyLoadedActivity: (activity: SerialisedActivity) => string;
   resetDraft: () => string;
   generateDraftHtml: () => { html: string; filename: string } | null;
   draftGenerateHint: string;
@@ -71,7 +71,7 @@ export function useSavedActivities(options: UseSavedActivitiesOptions) {
 
   const [savedId, setSavedId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState("");
-  const [summaries, setSummaries] = useState<SerializedActivitySummary[]>([]);
+  const [summaries, setSummaries] = useState<SerialisedActivitySummary[]>([]);
   const [cleanSignature, setCleanSignature] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);

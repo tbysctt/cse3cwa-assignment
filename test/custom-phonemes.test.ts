@@ -18,7 +18,7 @@ describe("Custom phonemes parsing and canonicalization", () => {
     expect(k.grapheme).toBe("K");
   });
 
-  it("canonicalizes common Latin typos to IPA equivalents", () => {
+  it("canonicalises common Latin typos to IPA equivalents", () => {
     // Latin 'g' to script 'ɡ'
     const g = resolveSinglePhoneme("g", HCE_PHONEME_INVENTORY);
     expect(g.ipa).toBe("ɡ");

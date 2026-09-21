@@ -66,7 +66,7 @@ describe("activity server actions", () => {
     vi.clearAllMocks();
   });
 
-  it("serializes activity dates as ISO strings", async () => {
+  it("serialises activity dates as ISO strings", async () => {
     vi.mocked(getActivity).mockResolvedValue(sampleActivity);
     const result = await getActivityAction("a1");
     expect(result.ok).toBe(true);

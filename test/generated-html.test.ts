@@ -24,12 +24,12 @@ describe("HTML utilities", () => {
     expect(escapeHtml('&<>"')).toBe("&amp;&lt;&gt;&quot;");
   });
 
-  it("serializes data without ending a script block", () => {
-    const serialized = toJson({ value: "</script>\u2028\u2029" });
-    expect(serialized).not.toContain("</script>");
-    expect(serialized).toContain("\\u003c/script>");
-    expect(serialized).toContain("\\u2028");
-    expect(serialized).toContain("\\u2029");
+  it("serialises data without ending a script block", () => {
+    const serialised = toJson({ value: "</script>\u2028\u2029" });
+    expect(serialised).not.toContain("</script>");
+    expect(serialised).toContain("\\u003c/script>");
+    expect(serialised).toContain("\\u2028");
+    expect(serialised).toContain("\\u2029");
   });
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { SerializedActivitySummary } from "@/lib/activity-action-types";
+import type { SerialisedActivitySummary } from "@/lib/activity-action-types";
 import { SectionCard } from "@/components/shared/SectionCard";
 
 const iconButtonClass =
@@ -50,7 +50,7 @@ export function SavedActivitiesPanel({
   onRename,
   onDelete,
 }: {
-  summaries: SerializedActivitySummary[];
+  summaries: SerialisedActivitySummary[];
   selectedId: string;
   savedId: string | null;
   isDirty: boolean;

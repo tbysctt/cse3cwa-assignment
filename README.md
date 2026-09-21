@@ -138,7 +138,7 @@ The Word Search generator (`lib/word-search.ts`) generates solvable grids determ
    - Diagonal Down-Left (`DL`: $[1, -1]$)
 3. **Collision Checking**: Candidate placements check that overlapping cells either contain `null` or an identical phoneme symbol (`existing.ipa === phoneme.ipa`).
 4. **Deterministic PRNG**: Uses the `mulberry32` pseudo-random number generator seeded with a consistent seed (`DEFAULT_WORD_SEARCH_SEED = 42`). This ensures that the React live preview and the downloaded HTML export generate **identical puzzle boards**.
-5. **Filler Distribution**: Empty cells are populated with randomized phoneme symbols sampled from the active vocabulary and filler inventory.
+5. **Filler Distribution**: Empty cells are populated with randomised phoneme symbols sampled from the active vocabulary and filler inventory.
 
 ### Straight-Line Contiguous Selection Geometry
 
@@ -157,8 +157,8 @@ In addition to the 90 fixed HCE corpus entries, teachers can define arbitrary cu
 - **Flexible Token Formats**: Accepts slash-delimited (`/k/ /æ/ /t/`), space-delimited (`k æ t`), or comma-delimited (`k, æ, t`) input.
 - **Typo & Digraph Canonicalization**:
   - Automatically maps common Latin typos to canonical IPA: `g` $\rightarrow$ `ɡ` (U+0261), `r` $\rightarrow$ `ɹ` (U+0279).
-  - Normalizes English digraphs: `th` $\rightarrow$ `θ`, `sh` $\rightarrow$ `ʃ`, `ch` $\rightarrow$ `tʃ`, `ee` $\rightarrow$ `iː`, `oo` $\rightarrow$ `ʉː`, `ar` $\rightarrow$ `ɐː`, `er` $\rightarrow$ `ɜː`, `or` $\rightarrow$ `oː`, `ng` $\rightarrow$ `ŋ`.
-- **Arbitrary Phoneme Fallback**: If a teacher enters an IPA symbol outside the 43 HCE keys (e.g. `/x/`, `/q/`, `/ʔ/`), the system constructs a valid `Phoneme` object with synthesized graphemes and cues, and dynamically renders extra keyboard rows in the Wordle export.
+  - Normalises English digraphs: `th` $\rightarrow$ `θ`, `sh` $\rightarrow$ `ʃ`, `ch` $\rightarrow$ `tʃ`, `ee` $\rightarrow$ `iː`, `oo` $\rightarrow$ `ʉː`, `ar` $\rightarrow$ `ɐː`, `er` $\rightarrow$ `ɜː`, `or` $\rightarrow$ `oː`, `ng` $\rightarrow$ `ŋ`.
+- **Arbitrary Phoneme Fallback**: If a teacher enters an IPA symbol outside the 43 HCE keys (e.g. `/x/`, `/q/`, `/ʔ/`), the system constructs a valid `Phoneme` object with synthesised graphemes and cues, and dynamically renders extra keyboard rows in the Wordle export.
 - **Click Palette**: The `PhonemePickerPalette` component categorizes sounds into Consonants (Stops, Nasals, Fricatives, Affricates, Glides) and Vowels (Short, Long, Diphthongs) for one-click insertion.
 
 ## Standalone HTML Export Architecture

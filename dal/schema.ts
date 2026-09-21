@@ -53,7 +53,7 @@ export const activityWords = pgTable(
   ],
 );
 
-/** Denormalized phoneme rows as of activity save time. */
+/** Denormalised phoneme rows as of activity save time. */
 export const activityWordPhonemes = pgTable(
   "activity_word_phonemes",
   {

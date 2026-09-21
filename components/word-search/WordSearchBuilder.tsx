@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import type { SerializedActivity } from "@/lib/activity-action-types";
+import type { SerialisedActivity } from "@/lib/activity-action-types";
 import { BuilderLayout } from "@/components/shared/BuilderLayout";
 import { SavedActivitiesPanel } from "@/components/shared/SavedActivitiesPanel";
 import { WordBankModal } from "@/components/shared/WordBankModal";
@@ -155,7 +155,7 @@ export function WordSearchBuilder({
   );
 
   const applyLoadedActivity = useCallback(
-    (activity: SerializedActivity) => {
+    (activity: SerialisedActivity) => {
       const loadedWords = activity.words.map(storedWordToPhonemeWord);
       if (loadedWords.length !== REQUIRED_WORD_COUNT) {
         throw new Error(

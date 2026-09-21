@@ -63,7 +63,7 @@ describe("HCE keyboard and corpus", () => {
     }
   });
 
-  it("canonicalizes great with ɡ and keeps thin as the default Wordle target", () => {
+  it("canonicalises great with ɡ and keeps thin as the default Wordle target", () => {
     const great = HCE_WORDS_4.find((word) => word.id === "great");
     expect(great?.phonemes.map((phoneme) => phoneme.ipa)).toEqual([
       "ɡ",

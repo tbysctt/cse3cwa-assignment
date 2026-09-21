@@ -18,8 +18,8 @@ import {
 } from "@/dal";
 import type {
   ActionResult,
-  SerializedActivity,
-  SerializedActivitySummary,
+  SerialisedActivity,
+  SerialisedActivitySummary,
 } from "@/lib/activity-action-types";
 import {
   buildHtmlFromActivity,
@@ -28,8 +28,8 @@ import {
 
 export type {
   ActionResult,
-  SerializedActivity,
-  SerializedActivitySummary,
+  SerialisedActivity,
+  SerialisedActivitySummary,
 } from "@/lib/activity-action-types";
 
 function toActionError(error: unknown): ActionResult<never> {
@@ -45,7 +45,7 @@ function toActionError(error: unknown): ActionResult<never> {
   return { ok: false, error: "Something went wrong." };
 }
 
-function serializeActivity(activity: ActivityConfiguration): SerializedActivity {
+function serializeActivity(activity: ActivityConfiguration): SerialisedActivity {
   return {
     ...activity,
     createdAt: new Date(activity.createdAt).toISOString(),
@@ -55,7 +55,7 @@ function serializeActivity(activity: ActivityConfiguration): SerializedActivity 
 
 function serializeSummary(
   summary: ActivitySummary,
-): SerializedActivitySummary {
+): SerialisedActivitySummary {
   return {
     ...summary,
     createdAt: new Date(summary.createdAt).toISOString(),
@@ -65,7 +65,7 @@ function serializeSummary(
 
 export async function listActivitiesAction(
   activityType: ActivityType,
-): Promise<ActionResult<SerializedActivitySummary[]>> {
+): Promise<ActionResult<SerialisedActivitySummary[]>> {
   try {
     const rows = await listActivities({ activityType });
     return { ok: true, data: rows.map(serializeSummary) };
@@ -76,7 +76,7 @@ export async function listActivitiesAction(
 
 export async function getActivityAction(
   id: string,
-): Promise<ActionResult<SerializedActivity>> {
+): Promise<ActionResult<SerialisedActivity>> {
   try {
     const activity = await getActivity(id);
     if (!activity) {
@@ -90,7 +90,7 @@ export async function getActivityAction(
 
 export async function createActivityAction(
   input: CreateActivityInput,
-): Promise<ActionResult<SerializedActivity>> {
+): Promise<ActionResult<SerialisedActivity>> {
   try {
     const activity = await createActivity(input);
     return { ok: true, data: serializeActivity(activity) };
@@ -102,7 +102,7 @@ export async function createActivityAction(
 export async function updateActivityAction(
   id: string,
   patch: UpdateActivityInput,
-): Promise<ActionResult<SerializedActivity>> {
+): Promise<ActionResult<SerialisedActivity>> {
   try {
     const activity = await updateActivity(id, patch);
     return { ok: true, data: serializeActivity(activity) };
