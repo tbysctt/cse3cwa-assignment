@@ -22,7 +22,7 @@ services:
       retries: 5
 
   pgadmin:
-    image: dpage/pgadmin4:8
+    image: dpage/pgadmin4:9
     container_name: phoneme-activity-builder-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
