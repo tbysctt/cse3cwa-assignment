@@ -3,6 +3,7 @@ import { and, asc, eq, ne } from "drizzle-orm";
 import { getDb } from "./client";
 import { DalNotFoundError, DalValidationError } from "./errors";
 import { keyboardSlots, phonemes, wordPhonemes, words } from "./schema";
+import { withDbSpan } from "./tracing";
 import type { PhonemeInput } from "./types";
 import type {
   KeyboardSlot,
@@ -145,187 +146,201 @@ async function loadWordById(id: string): Promise<PhonemeWord | null> {
 }
 
 export async function listPhonemeInventory(): Promise<Phoneme[]> {
-  const db = getDb();
-  const rows = await db
-    .select({
-      ipa: phonemes.ipa,
-      grapheme: phonemes.grapheme,
-      example: phonemes.example,
-    })
-    .from(phonemes)
-    .orderBy(asc(phonemes.ipa));
+  return withDbSpan("listPhonemeInventory", async () => {
+    const db = getDb();
+    const rows = await db
+      .select({
+        ipa: phonemes.ipa,
+        grapheme: phonemes.grapheme,
+        example: phonemes.example,
+      })
+      .from(phonemes)
+      .orderBy(asc(phonemes.ipa));
 
-  return rows;
+    return rows;
+  });
 }
 
 export async function getKeyboardRows(): Promise<KeyboardSlot[][]> {
-  const db = getDb();
-  const rows = await db
-    .select({
-      row: keyboardSlots.row,
-      col: keyboardSlots.col,
-      ipa: phonemes.ipa,
-      grapheme: phonemes.grapheme,
-      example: phonemes.example,
-      phonemeId: keyboardSlots.phonemeId,
-    })
-    .from(keyboardSlots)
-    .leftJoin(phonemes, eq(keyboardSlots.phonemeId, phonemes.id))
-    .orderBy(asc(keyboardSlots.row), asc(keyboardSlots.col));
+  return withDbSpan("getKeyboardRows", async () => {
+    const db = getDb();
+    const rows = await db
+      .select({
+        row: keyboardSlots.row,
+        col: keyboardSlots.col,
+        ipa: phonemes.ipa,
+        grapheme: phonemes.grapheme,
+        example: phonemes.example,
+        phonemeId: keyboardSlots.phonemeId,
+      })
+      .from(keyboardSlots)
+      .leftJoin(phonemes, eq(keyboardSlots.phonemeId, phonemes.id))
+      .orderBy(asc(keyboardSlots.row), asc(keyboardSlots.col));
 
-  const byRow = new Map<number, KeyboardSlot[]>();
-  for (const slot of rows) {
-    const list = byRow.get(slot.row) ?? [];
-    list[slot.col] = slot.phonemeId
-      ? {
-          ipa: slot.ipa!,
-          grapheme: slot.grapheme!,
-          example: slot.example!,
-        }
-      : null;
-    byRow.set(slot.row, list);
-  }
+    const byRow = new Map<number, KeyboardSlot[]>();
+    for (const slot of rows) {
+      const list = byRow.get(slot.row) ?? [];
+      list[slot.col] = slot.phonemeId
+        ? {
+            ipa: slot.ipa!,
+            grapheme: slot.grapheme!,
+            example: slot.example!,
+          }
+        : null;
+      byRow.set(slot.row, list);
+    }
 
-  return [...byRow.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([, cols]) => cols);
+    return [...byRow.entries()]
+      .sort(([a], [b]) => a - b)
+      .map(([, cols]) => cols);
+  });
 }
 
 export async function listWords(options?: {
   length?: PhonemeLength;
 }): Promise<PhonemeWord[]> {
-  const db = getDb();
-  const query = db.select().from(words);
-  const wordRows = await (
-    options?.length
-      ? query.where(eq(words.phonemeLength, options.length))
-      : query
-  ).orderBy(asc(words.english));
+  return withDbSpan("listWords", async () => {
+    const db = getDb();
+    const query = db.select().from(words);
+    const wordRows = await (
+      options?.length
+        ? query.where(eq(words.phonemeLength, options.length))
+        : query
+    ).orderBy(asc(words.english));
 
-  if (wordRows.length === 0) return [];
+    if (wordRows.length === 0) return [];
 
-  const linkRows = await db
-    .select({
-      wordId: wordPhonemes.wordId,
-      position: wordPhonemes.position,
-      ipa: phonemes.ipa,
-      grapheme: phonemes.grapheme,
-      example: phonemes.example,
-    })
-    .from(wordPhonemes)
-    .innerJoin(phonemes, eq(wordPhonemes.phonemeId, phonemes.id))
-    .orderBy(asc(wordPhonemes.position));
+    const linkRows = await db
+      .select({
+        wordId: wordPhonemes.wordId,
+        position: wordPhonemes.position,
+        ipa: phonemes.ipa,
+        grapheme: phonemes.grapheme,
+        example: phonemes.example,
+      })
+      .from(wordPhonemes)
+      .innerJoin(phonemes, eq(wordPhonemes.phonemeId, phonemes.id))
+      .orderBy(asc(wordPhonemes.position));
 
-  const phonemesByWord = new Map<string, Phoneme[]>();
-  for (const link of linkRows) {
-    const list = phonemesByWord.get(link.wordId) ?? [];
-    list[link.position] = {
-      ipa: link.ipa,
-      grapheme: link.grapheme,
-      example: link.example,
-    };
-    phonemesByWord.set(link.wordId, list);
-  }
+    const phonemesByWord = new Map<string, Phoneme[]>();
+    for (const link of linkRows) {
+      const list = phonemesByWord.get(link.wordId) ?? [];
+      list[link.position] = {
+        ipa: link.ipa,
+        grapheme: link.grapheme,
+        example: link.example,
+      };
+      phonemesByWord.set(link.wordId, list);
+    }
 
-  return wordRows.map((row) => ({
-    id: row.id,
-    english: row.english,
-    phonemes: (phonemesByWord.get(row.id) ?? []).filter(Boolean),
-  }));
+    return wordRows.map((row) => ({
+      id: row.id,
+      english: row.english,
+      phonemes: (phonemesByWord.get(row.id) ?? []).filter(Boolean),
+    }));
+  });
 }
 
 export async function findWordById(id: string): Promise<PhonemeWord | null> {
-  return loadWordById(id);
+  return withDbSpan("findWordById", () => loadWordById(id));
 }
 
 export async function createWord(input: BankWordInput): Promise<PhonemeWord> {
-  const validated = validateWordInput(input);
-  await assertUniqueEnglish(validated.english);
-  const phonemeIds = await resolvePhonemeIds(validated.phonemes);
-  const db = getDb();
+  return withDbSpan("createWord", async () => {
+    const validated = validateWordInput(input);
+    await assertUniqueEnglish(validated.english);
+    const phonemeIds = await resolvePhonemeIds(validated.phonemes);
+    const db = getDb();
 
-  const created = await db.transaction(async (tx) => {
-    const [inserted] = await tx
-      .insert(words)
-      .values({
-        english: validated.english,
-        phonemeLength: validated.length,
-      })
-      .returning({ id: words.id });
-    if (!inserted) {
-      throw new Error("Failed to insert word.");
+    const created = await db.transaction(async (tx) => {
+      const [inserted] = await tx
+        .insert(words)
+        .values({
+          english: validated.english,
+          phonemeLength: validated.length,
+        })
+        .returning({ id: words.id });
+      if (!inserted) {
+        throw new Error("Failed to insert word.");
+      }
+      await tx.insert(wordPhonemes).values(
+        phonemeIds.map((phonemeId, position) => ({
+          wordId: inserted.id,
+          position,
+          phonemeId,
+        })),
+      );
+      return inserted.id;
+    });
+
+    const word = await loadWordById(created);
+    if (!word) {
+      throw new Error("Failed to load created word.");
     }
-    await tx.insert(wordPhonemes).values(
-      phonemeIds.map((phonemeId, position) => ({
-        wordId: inserted.id,
-        position,
-        phonemeId,
-      })),
-    );
-    return inserted.id;
+    return word;
   });
-
-  const word = await loadWordById(created);
-  if (!word) {
-    throw new Error("Failed to load created word.");
-  }
-  return word;
 }
 
 export async function updateWord(
   id: string,
   input: BankWordInput,
 ): Promise<PhonemeWord> {
-  const validated = validateWordInput(input);
-  const db = getDb();
-  const [existing] = await db
-    .select()
-    .from(words)
-    .where(eq(words.id, id))
-    .limit(1);
-  if (!existing) {
-    throw new DalNotFoundError(`Word “${id}” not found.`);
-  }
+  return withDbSpan("updateWord", async () => {
+    const validated = validateWordInput(input);
+    const db = getDb();
+    const [existing] = await db
+      .select()
+      .from(words)
+      .where(eq(words.id, id))
+      .limit(1);
+    if (!existing) {
+      throw new DalNotFoundError(`Word “${id}” not found.`);
+    }
 
-  await assertUniqueEnglish(validated.english, existing.id);
-  const phonemeIds = await resolvePhonemeIds(validated.phonemes);
+    await assertUniqueEnglish(validated.english, existing.id);
+    const phonemeIds = await resolvePhonemeIds(validated.phonemes);
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(words)
-      .set({
-        english: validated.english,
-        phonemeLength: validated.length,
-      })
-      .where(eq(words.id, existing.id));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(words)
+        .set({
+          english: validated.english,
+          phonemeLength: validated.length,
+        })
+        .where(eq(words.id, existing.id));
 
-    await tx.delete(wordPhonemes).where(eq(wordPhonemes.wordId, existing.id));
+      await tx
+        .delete(wordPhonemes)
+        .where(eq(wordPhonemes.wordId, existing.id));
 
-    await tx.insert(wordPhonemes).values(
-      phonemeIds.map((phonemeId, position) => ({
-        wordId: existing.id,
-        position,
-        phonemeId,
-      })),
-    );
+      await tx.insert(wordPhonemes).values(
+        phonemeIds.map((phonemeId, position) => ({
+          wordId: existing.id,
+          position,
+          phonemeId,
+        })),
+      );
+    });
+
+    const word = await loadWordById(existing.id);
+    if (!word) {
+      throw new Error("Failed to load updated word.");
+    }
+    return word;
   });
-
-  const word = await loadWordById(existing.id);
-  if (!word) {
-    throw new Error("Failed to load updated word.");
-  }
-  return word;
 }
 
 export async function deleteWord(id: string): Promise<void> {
-  const db = getDb();
-  const [existing] = await db
-    .select({ id: words.id })
-    .from(words)
-    .where(eq(words.id, id))
-    .limit(1);
-  if (!existing) {
-    throw new DalNotFoundError(`Word “${id}” not found.`);
-  }
-  await db.delete(words).where(eq(words.id, existing.id));
+  return withDbSpan("deleteWord", async () => {
+    const db = getDb();
+    const [existing] = await db
+      .select({ id: words.id })
+      .from(words)
+      .where(eq(words.id, id))
+      .limit(1);
+    if (!existing) {
+      throw new DalNotFoundError(`Word “${id}” not found.`);
+    }
+    await db.delete(words).where(eq(words.id, existing.id));
+  });
 }

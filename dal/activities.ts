@@ -8,6 +8,7 @@ import {
   activityWordPhonemes,
   activityWords,
 } from "./schema";
+import { withDbSpan } from "./tracing";
 import type {
   ActivityConfiguration,
   ActivitySummary,
@@ -100,139 +101,152 @@ async function loadActivity(
 export async function createActivity(
   input: CreateActivityInput,
 ): Promise<ActivityConfiguration> {
-  const validated = validateCreateActivity(input);
-  const db = getDb();
+  return withDbSpan("createActivity", async () => {
+    const validated = validateCreateActivity(input);
+    const db = getDb();
 
-  const createdId = await db.transaction(async (tx) => {
-    const [activity] = await tx
-      .insert(activityConfigurations)
-      .values({
-        name: validated.name,
-        activityType: validated.activityType,
-        difficulty: validated.difficulty,
-        showHints: validated.showHints,
-        maxAttempts: validated.maxAttempts,
-        seed: validated.seed,
-      })
-      .returning({ id: activityConfigurations.id });
+    const createdId = await db.transaction(async (tx) => {
+      const [activity] = await tx
+        .insert(activityConfigurations)
+        .values({
+          name: validated.name,
+          activityType: validated.activityType,
+          difficulty: validated.difficulty,
+          showHints: validated.showHints,
+          maxAttempts: validated.maxAttempts,
+          seed: validated.seed,
+        })
+        .returning({ id: activityConfigurations.id });
 
-    if (!activity) {
-      throw new Error("Failed to create activity configuration.");
+      if (!activity) {
+        throw new Error("Failed to create activity configuration.");
+      }
+
+      await insertWords(tx, activity.id, validated.words);
+      return activity.id;
+    });
+
+    const loaded = await loadActivity(createdId);
+    if (!loaded) {
+      throw new Error("Created activity could not be loaded.");
     }
-
-    await insertWords(tx, activity.id, validated.words);
-    return activity.id;
+    return loaded;
   });
-
-  const loaded = await loadActivity(createdId);
-  if (!loaded) {
-    throw new Error("Created activity could not be loaded.");
-  }
-  return loaded;
 }
 
 export async function getActivity(
   id: string,
 ): Promise<ActivityConfiguration | null> {
-  return loadActivity(id);
+  return withDbSpan("getActivity", () => loadActivity(id));
 }
 
 export async function listActivities(
   filter: ListActivitiesFilter = {},
 ): Promise<ActivitySummary[]> {
-  const db = getDb();
-  const rows = await db
-    .select({
-      id: activityConfigurations.id,
-      name: activityConfigurations.name,
-      activityType: activityConfigurations.activityType,
-      difficulty: activityConfigurations.difficulty,
-      showHints: activityConfigurations.showHints,
-      maxAttempts: activityConfigurations.maxAttempts,
-      seed: activityConfigurations.seed,
-      createdAt: activityConfigurations.createdAt,
-      updatedAt: activityConfigurations.updatedAt,
-      wordCount: count(activityWords.id),
-    })
-    .from(activityConfigurations)
-    .leftJoin(activityWords, eq(activityWords.activityId, activityConfigurations.id))
-    .where(
-      filter.activityType
-        ? eq(activityConfigurations.activityType, filter.activityType)
-        : undefined,
-    )
-    .groupBy(activityConfigurations.id)
-    .orderBy(desc(activityConfigurations.createdAt));
+  return withDbSpan("listActivities", async () => {
+    const db = getDb();
+    const rows = await db
+      .select({
+        id: activityConfigurations.id,
+        name: activityConfigurations.name,
+        activityType: activityConfigurations.activityType,
+        difficulty: activityConfigurations.difficulty,
+        showHints: activityConfigurations.showHints,
+        maxAttempts: activityConfigurations.maxAttempts,
+        seed: activityConfigurations.seed,
+        createdAt: activityConfigurations.createdAt,
+        updatedAt: activityConfigurations.updatedAt,
+        wordCount: count(activityWords.id),
+      })
+      .from(activityConfigurations)
+      .leftJoin(
+        activityWords,
+        eq(activityWords.activityId, activityConfigurations.id),
+      )
+      .where(
+        filter.activityType
+          ? eq(activityConfigurations.activityType, filter.activityType)
+          : undefined,
+      )
+      .groupBy(activityConfigurations.id)
+      .orderBy(desc(activityConfigurations.createdAt));
 
-  return rows.map((row) =>
-    mapActivitySummary({
-      ...row,
-      wordCount: Number(row.wordCount),
-    }),
-  );
+    return rows.map((row) =>
+      mapActivitySummary({
+        ...row,
+        wordCount: Number(row.wordCount),
+      }),
+    );
+  });
 }
 
 export async function updateActivity(
   id: string,
   patch: UpdateActivityInput,
 ): Promise<ActivityConfiguration> {
-  const existing = await loadActivity(id);
-  if (!existing) {
-    throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
-  }
-
-  const validated = validateUpdateActivity(
-    existing.activityType,
-    toValidatedSnapshot(existing),
-    patch,
-  );
-
-  const db = getDb();
-  await db.transaction(async (tx) => {
-    const [updated] = await tx
-      .update(activityConfigurations)
-      .set({
-        name: validated.name,
-        difficulty: validated.difficulty,
-        showHints: validated.showHints,
-        maxAttempts: validated.maxAttempts,
-        seed: validated.seed,
-        updatedAt: new Date(),
-      })
-      .where(eq(activityConfigurations.id, id))
-      .returning({ id: activityConfigurations.id });
-
-    if (!updated) {
+  return withDbSpan("updateActivity", async () => {
+    const existing = await loadActivity(id);
+    if (!existing) {
       throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
     }
 
-    if (patch.words !== undefined) {
-      await tx.delete(activityWords).where(eq(activityWords.activityId, id));
-      await insertWords(tx, id, validated.words);
-    }
-  });
+    const validated = validateUpdateActivity(
+      existing.activityType,
+      toValidatedSnapshot(existing),
+      patch,
+    );
 
-  const loaded = await loadActivity(id);
-  if (!loaded) {
-    throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
-  }
-  return loaded;
+    const db = getDb();
+    await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(activityConfigurations)
+        .set({
+          name: validated.name,
+          difficulty: validated.difficulty,
+          showHints: validated.showHints,
+          maxAttempts: validated.maxAttempts,
+          seed: validated.seed,
+          updatedAt: new Date(),
+        })
+        .where(eq(activityConfigurations.id, id))
+        .returning({ id: activityConfigurations.id });
+
+      if (!updated) {
+        throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
+      }
+
+      if (patch.words !== undefined) {
+        await tx.delete(activityWords).where(eq(activityWords.activityId, id));
+        await insertWords(tx, id, validated.words);
+      }
+    });
+
+    const loaded = await loadActivity(id);
+    if (!loaded) {
+      throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
+    }
+    return loaded;
+  });
 }
 
 export async function deleteActivity(id: string): Promise<void> {
-  const db = getDb();
-  const deleted = await db
-    .delete(activityConfigurations)
-    .where(eq(activityConfigurations.id, id))
-    .returning({ id: activityConfigurations.id });
+  return withDbSpan("deleteActivity", async () => {
+    const db = getDb();
+    const deleted = await db
+      .delete(activityConfigurations)
+      .where(eq(activityConfigurations.id, id))
+      .returning({ id: activityConfigurations.id });
 
-  if (deleted.length === 0) {
-    throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
-  }
+    if (deleted.length === 0) {
+      throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
+    }
+  });
 }
 
 export async function ping(): Promise<boolean> {
-  const db = getDb();
-  await db.execute(sql`SELECT 1`);
-  return true;
+  return withDbSpan("ping", async () => {
+    const db = getDb();
+    await db.execute(sql`SELECT 1`);
+    return true;
+  });
 }
