@@ -1,4 +1,84 @@
+import { logs, SeverityNumber } from "@opentelemetry/api-logs";
+import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
+import { resourceFromAttributes } from "@opentelemetry/resources";
+import {
+  BatchLogRecordProcessor,
+  LoggerProvider,
+} from "@opentelemetry/sdk-logs";
+import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { registerOTel } from "@vercel/otel";
+import { inspect } from "node:util";
+
+function formatConsoleArgs(args: unknown[]): string {
+  return args
+    .map((arg) => (typeof arg === "string" ? arg : inspect(arg, { depth: 4 })))
+    .join(" ");
+}
+
+function bridgeConsoleToOtel(serviceName: string) {
+  const logger = logs.getLogger(serviceName);
+
+  const levels: {
+    method: "debug" | "log" | "info" | "warn" | "error";
+    severityNumber: SeverityNumber;
+    severityText: string;
+  }[] = [
+    {
+      method: "debug",
+      severityNumber: SeverityNumber.DEBUG,
+      severityText: "DEBUG",
+    },
+    {
+      method: "log",
+      severityNumber: SeverityNumber.INFO,
+      severityText: "INFO",
+    },
+    {
+      method: "info",
+      severityNumber: SeverityNumber.INFO,
+      severityText: "INFO",
+    },
+    {
+      method: "warn",
+      severityNumber: SeverityNumber.WARN,
+      severityText: "WARN",
+    },
+    {
+      method: "error",
+      severityNumber: SeverityNumber.ERROR,
+      severityText: "ERROR",
+    },
+  ];
+
+  for (const { method, severityNumber, severityText } of levels) {
+    const original = console[method].bind(console);
+    console[method] = (...args: unknown[]) => {
+      original(...args);
+      logger.emit({
+        severityNumber,
+        severityText,
+        body: formatConsoleArgs(args),
+      });
+    };
+  }
+}
+
+function registerLogPipeline(serviceName: string) {
+  // Configure logs ourselves — @vercel/otel's logRecordProcessors path does not
+  // reliably export when mixed with the app's @opentelemetry/sdk-logs instance.
+  const loggerProvider = new LoggerProvider({
+    resource: resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: serviceName,
+    }),
+    processors: [
+      new BatchLogRecordProcessor({
+        exporter: new OTLPLogExporter(),
+        scheduledDelayMillis: 500,
+      }),
+    ],
+  });
+  logs.setGlobalLoggerProvider(loggerProvider);
+}
 
 export function register() {
   const serviceName = process.env.OTEL_SERVICE_NAME;
@@ -12,4 +92,7 @@ export function register() {
   }
 
   registerOTel({ serviceName });
+  registerLogPipeline(serviceName);
+  bridgeConsoleToOtel(serviceName);
+  console.info(`OpenTelemetry enabled for service "${serviceName}"`);
 }
