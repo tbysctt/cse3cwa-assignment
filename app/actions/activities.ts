@@ -25,6 +25,7 @@ import {
   buildHtmlFromActivity,
   type GeneratedActivityFile,
 } from "@/lib/activity-service";
+import { logger } from "@/lib/logger";
 
 export type {
   ActionResult,
@@ -32,16 +33,40 @@ export type {
   SerialisedActivitySummary,
 } from "@/lib/activity-action-types";
 
-function toActionError(error: unknown): ActionResult<never> {
+function toActionError(
+  error: unknown,
+  context: { action: string },
+): ActionResult<never> {
   if (error instanceof DalValidationError) {
+    logger.warn("activity.validation_failed", {
+      action: context.action,
+      "error.type": "DalValidationError",
+      "error.message": error.message,
+      "error.field": error.field ?? "",
+    });
     return { ok: false, error: error.message, field: error.field };
   }
   if (error instanceof DalNotFoundError) {
+    logger.warn("activity.not_found", {
+      action: context.action,
+      "error.type": "DalNotFoundError",
+      "error.message": error.message,
+    });
     return { ok: false, error: error.message };
   }
   if (error instanceof Error) {
+    logger.error("activity.failed", {
+      action: context.action,
+      "error.type": error.name || "Error",
+      "error.message": error.message,
+    });
     return { ok: false, error: error.message };
   }
+  logger.error("activity.failed", {
+    action: context.action,
+    "error.type": "Unknown",
+    "error.message": "Something went wrong.",
+  });
   return { ok: false, error: "Something went wrong." };
 }
 
@@ -70,7 +95,7 @@ export async function listActivitiesAction(
     const rows = await listActivities({ activityType });
     return { ok: true, data: rows.map(serializeSummary) };
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, { action: "listActivities" });
   }
 }
 
@@ -84,7 +109,7 @@ export async function getActivityAction(
     }
     return { ok: true, data: serializeActivity(activity) };
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, { action: "getActivity" });
   }
 }
 
@@ -93,9 +118,14 @@ export async function createActivityAction(
 ): Promise<ActionResult<SerialisedActivity>> {
   try {
     const activity = await createActivity(input);
+    logger.info("activity.created", {
+      action: "createActivity",
+      "activity.id": activity.id,
+      "activity.type": activity.activityType,
+    });
     return { ok: true, data: serializeActivity(activity) };
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, { action: "createActivity" });
   }
 }
 
@@ -105,9 +135,14 @@ export async function updateActivityAction(
 ): Promise<ActionResult<SerialisedActivity>> {
   try {
     const activity = await updateActivity(id, patch);
+    logger.info("activity.updated", {
+      action: "updateActivity",
+      "activity.id": activity.id,
+      "activity.type": activity.activityType,
+    });
     return { ok: true, data: serializeActivity(activity) };
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, { action: "updateActivity" });
   }
 }
 
@@ -116,9 +151,13 @@ export async function deleteActivityAction(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     await deleteActivity(id);
+    logger.info("activity.deleted", {
+      action: "deleteActivity",
+      "activity.id": id,
+    });
     return { ok: true, data: { id } };
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, { action: "deleteActivity" });
   }
 }
 
@@ -134,11 +173,14 @@ export async function generateStoredActivityHtmlAction(
       listPhonemeInventory(),
       getKeyboardRows(),
     ]);
-    return {
-      ok: true,
-      data: buildHtmlFromActivity(activity, { inventory, keyboardRows }),
-    };
+    const file = buildHtmlFromActivity(activity, { inventory, keyboardRows });
+    logger.info("activity.html_generated", {
+      action: "generateStoredActivityHtml",
+      "activity.id": activity.id,
+      "activity.type": activity.activityType,
+    });
+    return { ok: true, data: file };
   } catch (error) {
-    return toActionError(error);
+    return toActionError(error, { action: "generateStoredActivityHtml" });
   }
 }
