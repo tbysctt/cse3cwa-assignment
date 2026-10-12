@@ -1,4 +1,4 @@
-import { Context, metrics } from "@opentelemetry/api";
+import { Context } from "@opentelemetry/api";
 import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
@@ -7,10 +7,7 @@ import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from "@opentelemetry/sdk-logs";
-import {
-  MeterProvider,
-  PeriodicExportingMetricReader,
-} from "@opentelemetry/sdk-metrics";
+import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import {
   ReadableSpan,
   Span,
@@ -119,25 +116,19 @@ function registerLogPipeline(serviceName: string) {
   logs.setGlobalLoggerProvider(loggerProvider);
 }
 
-function registerMetricPipeline(serviceName: string) {
+function createMetricReaders() {
   const exportIntervalMillis = Number(
     process.env.OTEL_METRIC_EXPORT_INTERVAL || 60_000,
   );
 
-  const meterProvider = new MeterProvider({
-    resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: serviceName,
+  return [
+    new PeriodicExportingMetricReader({
+      exporter: new OTLPMetricExporter(),
+      exportIntervalMillis: Number.isFinite(exportIntervalMillis)
+        ? exportIntervalMillis
+        : 60_000,
     }),
-    readers: [
-      new PeriodicExportingMetricReader({
-        exporter: new OTLPMetricExporter(),
-        exportIntervalMillis: Number.isFinite(exportIntervalMillis)
-          ? exportIntervalMillis
-          : 60_000,
-      }),
-    ],
-  });
-  metrics.setGlobalMeterProvider(meterProvider);
+  ];
 }
 
 export function register() {
@@ -151,12 +142,14 @@ export function register() {
     return;
   }
 
+  // Register metrics through @vercel/otel so the same MeterProvider is used by
+  // route handlers (avoid a second provider that request code never sees).
   registerOTel({
     serviceName,
     spanProcessors: ["auto", new SpanNameProcessor()],
+    metricReaders: createMetricReaders(),
   });
   registerLogPipeline(serviceName);
-  registerMetricPipeline(serviceName);
   bridgeConsoleToOtel(serviceName);
   console.info(`OpenTelemetry enabled for service "${serviceName}"`);
 }

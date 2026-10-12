@@ -67,9 +67,12 @@ The Compose stack includes:
 | Service | URL / port | Role |
 | --- | --- | --- |
 | **Grafana (otel-lgtm)** | http://localhost:3001 | Metrics, logs, traces UI; provisioned **Phoneme Activity Builder** dashboard |
-| **OTLP** | `localhost:4317` / `4318` | Backend traces, metrics, and logs from the Next.js app |
+| **OTLP** | `localhost:4317` / `4318` | Backend traces, metrics, and logs **pushed** from the Next.js app |
+| **health-prober** | (internal) | `GET http://nextjs-app:3000/health` every ~10s so health metrics keep moving |
 | **Alloy (Faro)** | http://localhost:12347/collect | Receives Grafana Faro RUM from the browser and forwards into LGTM |
 | **In-app Status** | `/status` | Live health, activity usage, export counters, and unusual-state warnings |
+
+Dashboard health panels read Prometheus series such as `app_health_check_total` that the app records on `/health` and exports over OTLP (not scraped from the app).
 
 Local `.env.example` sets `OTEL_*` for the backend and `NEXT_PUBLIC_FARO_*` for Faro. Start collectors with:
 
@@ -91,7 +94,7 @@ npm test
 
 ### Docker
 
-`docker compose up --build` starts Postgres, pgAdmin, **otel-lgtm**, **Alloy (Faro receiver)**, and the Next.js app. The app container entrypoint runs `scripts/migrate.mjs` before `node server.js` so the schema is applied automatically. Grafana loads the dashboard JSON from `docker/grafana/`.
+`docker compose up --build` starts Postgres, pgAdmin, **otel-lgtm**, **Alloy (Faro receiver)**, the Next.js app, and **health-prober**. The app container entrypoint runs `scripts/migrate.mjs` before `node server.js` so the schema is applied automatically. Grafana loads the dashboard JSON from `docker/grafana/`.
 
 **pgAdmin** (browse tables and data):
 

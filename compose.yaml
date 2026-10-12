@@ -102,6 +102,22 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  # Hits /health so app.health.check.* counters keep increasing and OTLP-push to Grafana.
+  health-prober:
+    image: curlimages/curl:8.12.1
+    container_name: phoneme-activity-builder-health-prober
+    command:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          curl -sf "http://nextjs-app:3000/health" || true
+          sleep 10
+        done
+    depends_on:
+      - nextjs-app
+    restart: unless-stopped
+
 volumes:
   pgdata:
   pgadmin_data:

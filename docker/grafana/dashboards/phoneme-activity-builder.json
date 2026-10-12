@@ -44,11 +44,11 @@
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "title": "Health OK (rate)",
+      "title": "Health OK (checks / 5m)",
       "type": "stat",
       "targets": [
         {
-          "expr": "sum(rate(app_health_check_total{service_name=\"phoneme-activity-builder\",status=\"ok\"}[5m])) or vector(0)",
+          "expr": "sum(increase(app_health_check_total{service_name=\"phoneme-activity-builder\",status=\"ok\"}[5m]))",
           "legendFormat": "ok",
           "refId": "A"
         }
@@ -73,14 +73,19 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(app_health_check_duration_milliseconds_bucket{service_name=\"phoneme-activity-builder\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (increase(app_health_check_duration_milliseconds_bucket{service_name=\"phoneme-activity-builder\"}[5m])))",
           "legendFormat": "p95",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(app_health_check_duration_milliseconds_bucket{service_name=\"phoneme-activity-builder\"}[5m])))",
+          "expr": "histogram_quantile(0.50, sum by (le) (increase(app_health_check_duration_milliseconds_bucket{service_name=\"phoneme-activity-builder\"}[5m])))",
           "legendFormat": "p50",
           "refId": "B"
+        },
+        {
+          "expr": "sum(increase(app_health_check_duration_milliseconds_sum{service_name=\"phoneme-activity-builder\"}[5m])) / sum(increase(app_health_check_duration_milliseconds_count{service_name=\"phoneme-activity-builder\"}[5m]))",
+          "legendFormat": "avg",
+          "refId": "C"
         }
       ]
     },
