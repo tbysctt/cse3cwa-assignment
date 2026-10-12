@@ -1,0 +1,86 @@
+services:
+  app:
+    image: ghcr.io/tbysctt/cse3cwa:82657bdbf3fafea322a4013a30e07d115575dd08
+    networks:
+      - traefik-public
+      - cse3cwa
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.cse3cwa-http.entrypoints=web
+        - traefik.http.routers.cse3cwa-http.rule=Host(`cse3cwa.tobyscott.dev`)
+        - traefik.http.routers.cse3cwa-https.entrypoints=websecure
+        - traefik.http.routers.cse3cwa-https.rule=Host(`cse3cwa.tobyscott.dev`)
+        - traefik.http.routers.cse3cwa-https.tls.certresolver=le
+        - traefik.http.services.cse3cwa.loadbalancer.server.port=80 # CHECK THE PORT
+  db:
+    image: postgres:16-alpine
+    container_name: phoneme-activity-builder-db
+    environment:
+      POSTGRES_USER: phoneme-activity-builder
+      POSTGRES_PASSWORD: cse3cwa
+      POSTGRES_DB: phoneme-activity-builder
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - cse3cwa
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U phoneme-activity-builder -d phoneme-activity-builder",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    networks:
+      - traefik-public
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.cse3cwa-http.entrypoints=web
+        - traefik.http.routers.cse3cwa-http.rule=Host(`grafana.cse3cwa.tobyscott.dev`)
+        - traefik.http.routers.cse3cwa-https.entrypoints=websecure
+        - traefik.http.routers.cse3cwa-https.rule=Host(`grafana.cse3cwa.tobyscott.dev`)
+        - traefik.http.routers.cse3cwa-https.tls.certresolver=le
+        - traefik.http.services.cse3cwa.loadbalancer.server.port=3000
+
+  nextjs-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nextjs-app
+    ports:
+      - "80:3000"
+    environment:
+      - NODE_ENV=production
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+      - DATABASE_URL=postgresql://phoneme-activity-builder:cse3cwa@db:5432/phoneme-activity-builder
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-lgtm:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=phoneme-activity-builder
+    depends_on:
+      db:
+        condition: service_healthy
+      otel-lgtm:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  pgadmin_data:
+
+networks:
+  cse3cwa:
+  traefik-public:
+    external: true

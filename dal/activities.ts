@@ -250,3 +250,26 @@ export async function ping(): Promise<boolean> {
     return true;
   });
 }
+
+export type ActivityTypeCount = {
+  activityType: ActivityConfiguration["activityType"];
+  count: number;
+};
+
+export async function countActivitiesByType(): Promise<ActivityTypeCount[]> {
+  return withDbSpan("countActivitiesByType", async () => {
+    const db = getDb();
+    const rows = await db
+      .select({
+        activityType: activityConfigurations.activityType,
+        count: count(),
+      })
+      .from(activityConfigurations)
+      .groupBy(activityConfigurations.activityType);
+
+    return rows.map((row) => ({
+      activityType: row.activityType,
+      count: Number(row.count),
+    }));
+  });
+}

@@ -29,6 +29,7 @@ import { logger } from "@/lib/logger";
 import {
   recordActionDuration,
   recordHtmlExport,
+  recordUnusualState,
   type ActionOutcome,
   type HtmlExportOutcome,
 } from "@/lib/metrics";
@@ -65,6 +66,7 @@ function toActionError(
   context: { action: string },
 ): ActionResult<never> {
   if (error instanceof DalValidationError) {
+    recordUnusualState({ state: "invalid_data" });
     logger.warn("activity.validation_failed", {
       action: context.action,
       "error.type": "DalValidationError",
@@ -283,10 +285,14 @@ export async function generateStoredActivityHtmlAction(
       },
       performance.now() - start,
     );
+    const exportOutcome = classifyHtmlExportOutcome(error);
     recordHtmlExport({
       "activity.type": activityType,
-      outcome: classifyHtmlExportOutcome(error),
+      outcome: exportOutcome,
     });
+    if (exportOutcome === "generation_error") {
+      recordUnusualState({ state: "generation_failed" });
+    }
     return toActionError(error, { action: "generateStoredActivityHtml" });
   }
 }

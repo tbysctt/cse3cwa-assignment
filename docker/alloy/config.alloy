@@ -1,0 +1,39 @@
+// Receives Grafana Faro Web SDK payloads and forwards into otel-lgtm.
+// Faro posts to http://localhost:12347/collect from the browser.
+
+faro.receiver "default" {
+  server {
+    listen_address = "0.0.0.0"
+    listen_port    = 12347
+
+    cors_allowed_origins = [
+      "http://localhost:3000",
+      "http://127.0.0.1:3000",
+      "http://localhost",
+      "http://127.0.0.1",
+      "http://localhost:80",
+      "http://127.0.0.1:80",
+    ]
+  }
+
+  output {
+    logs   = [loki.write.lgtm.receiver]
+    traces = [otelcol.exporter.otlphttp.lgtm.input]
+  }
+}
+
+loki.write "lgtm" {
+  endpoint {
+    url = "http://otel-lgtm:3100/loki/api/v1/push"
+  }
+}
+
+otelcol.exporter.otlphttp "lgtm" {
+  client {
+    endpoint = "http://otel-lgtm:4318"
+
+    tls {
+      insecure = true
+    }
+  }
+}

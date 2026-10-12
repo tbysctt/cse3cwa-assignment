@@ -1,4 +1,4 @@
-import { and, asc, eq, ne } from "drizzle-orm";
+import { and, asc, count, eq, ne } from "drizzle-orm";
 
 import { getDb } from "./client";
 import { DalNotFoundError, DalValidationError } from "./errors";
@@ -193,6 +193,14 @@ export async function getKeyboardRows(): Promise<KeyboardSlot[][]> {
     return [...byRow.entries()]
       .sort(([a], [b]) => a - b)
       .map(([, cols]) => cols);
+  });
+}
+
+export async function countWords(): Promise<number> {
+  return withDbSpan("countWords", async () => {
+    const db = getDb();
+    const [row] = await db.select({ value: count() }).from(words);
+    return Number(row?.value ?? 0);
   });
 }
 

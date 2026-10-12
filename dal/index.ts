@@ -6,6 +6,7 @@
  */
 
 export {
+  countActivitiesByType,
   createActivity,
   deleteActivity,
   getActivity,
@@ -14,7 +15,10 @@ export {
   updateActivity,
 } from "./activities";
 
+export type { ActivityTypeCount } from "./activities";
+
 export {
+  countWords,
   createWord,
   deleteWord,
   findWordById,

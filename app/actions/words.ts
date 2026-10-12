@@ -13,6 +13,7 @@ import type { ActionResult } from "@/lib/activity-action-types";
 import { logger } from "@/lib/logger";
 import {
   recordActionDuration,
+  recordUnusualState,
   type ActionOutcome,
 } from "@/lib/metrics";
 import type { PhonemeWord } from "@/lib/phoneme-types";
@@ -32,6 +33,7 @@ function toActionError(
   context: { action: string },
 ): ActionResult<never> {
   if (error instanceof DalValidationError) {
+    recordUnusualState({ state: "invalid_data" });
     logger.warn("word.validation_failed", {
       action: context.action,
       "error.type": "DalValidationError",
@@ -67,6 +69,9 @@ function toActionError(
 export async function listWordsAction(): Promise<ActionResult<PhonemeWord[]>> {
   try {
     const words = await listWords();
+    if (words.length === 0) {
+      recordUnusualState({ state: "empty_word_list" });
+    }
     return { ok: true, data: words };
   } catch (error) {
     return toActionError(error, { action: "listWords" });

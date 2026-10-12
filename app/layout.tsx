@@ -1,4 +1,5 @@
 import { SiteShell } from "@/components/layout/SiteShell";
+import { FrontendObservability } from "@/components/observability/FrontendObservability";
 import { ThemeApplier } from "@/components/theme/ThemeApplier";
 import { student } from "@/lib/student";
 import {
@@ -55,6 +56,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         data-density={density}
       >
         <ThemeApplier theme={theme} />
+        <FrontendObservability />
         <SiteShell>{children}</SiteShell>
       </body>
     </html>

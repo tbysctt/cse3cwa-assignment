@@ -41,16 +41,42 @@ services:
   otel-lgtm:
     image: grafana/otel-lgtm:latest
     container_name: phoneme-activity-builder-otel-lgtm
+    environment:
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /otel-lgtm/grafana/conf/provisioning/dashboards/custom/phoneme-activity-builder.json
     ports:
       - "3001:3000" # Grafana UI
       - "4317:4317" # OTLP gRPC
       - "4318:4318" # OTLP HTTP
+    volumes:
+      - ./docker/grafana/dashboards/phoneme-activity-builder.json:/otel-lgtm/grafana/conf/provisioning/dashboards/custom/phoneme-activity-builder.json:ro
+      - ./docker/grafana/dashboards-provisioning.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/custom.yaml:ro
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: phoneme-activity-builder-alloy
+    command:
+      - run
+      - /etc/alloy-config/config.alloy
+      - --storage.path=/var/lib/alloy/data
+    ports:
+      - "12347:12347" # Faro /collect
+    # Mount the directory (not a single file) — Docker Desktop often turns
+    # file bind-mounts into directories and breaks Alloy startup.
+    volumes:
+      - ./docker/alloy:/etc/alloy-config:ro
+    depends_on:
+      - otel-lgtm
     restart: unless-stopped
 
   nextjs-app:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_FARO_URL: http://localhost:12347/collect
+        NEXT_PUBLIC_FARO_APP_NAME: phoneme-activity-builder-web
+        NEXT_PUBLIC_FARO_APP_NAMESPACE: phoneme-activity-builder
     container_name: nextjs-app
     ports:
       - "80:3000"
@@ -62,10 +88,17 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-lgtm:4318
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=phoneme-activity-builder
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=phoneme-activity-builder
+      - OTEL_METRIC_EXPORT_INTERVAL=5000
+      - NEXT_PUBLIC_FARO_URL=http://localhost:12347/collect
+      - NEXT_PUBLIC_FARO_APP_NAME=phoneme-activity-builder-web
+      - NEXT_PUBLIC_FARO_APP_NAMESPACE=phoneme-activity-builder
     depends_on:
       db:
         condition: service_healthy
       otel-lgtm:
+        condition: service_started
+      alloy:
         condition: service_started
     restart: unless-stopped
 

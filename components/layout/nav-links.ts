@@ -7,6 +7,7 @@ export const primaryNavLinks = [
 
 export const secondaryNavLinks = [
   { href: "/about", label: "About" },
+  { href: "/status", label: "Status" },
   { href: "/settings", label: "Settings" },
 ] as const;
 

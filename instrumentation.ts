@@ -1,5 +1,5 @@
+import { Context, metrics } from "@opentelemetry/api";
 import { logs, SeverityNumber } from "@opentelemetry/api-logs";
-import { metrics } from "@opentelemetry/api";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
 import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -11,9 +11,42 @@ import {
   MeterProvider,
   PeriodicExportingMetricReader,
 } from "@opentelemetry/sdk-metrics";
+import {
+  ReadableSpan,
+  Span,
+  SpanProcessor,
+} from "@opentelemetry/sdk-trace-node";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { registerOTel } from "@vercel/otel";
 import { inspect } from "node:util";
+
+/**
+ * Reduces cardinality of Next.js static asset span names (Faro / APM example).
+ */
+class SpanNameProcessor implements SpanProcessor {
+  forceFlush(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  onStart(span: Span, parentContext: Context): void {
+    void parentContext;
+    if (span.name.startsWith("GET /_next/static")) {
+      span.updateName("GET /_next/static");
+    } else if (span.name.startsWith("GET /_next/data")) {
+      span.updateName("GET /_next/data");
+    } else if (span.name.startsWith("GET /_next/image")) {
+      span.updateName("GET /_next/image");
+    }
+  }
+
+  onEnd(span: ReadableSpan): void {
+    void span;
+  }
+
+  shutdown(): Promise<void> {
+    return Promise.resolve();
+  }
+}
 
 function formatConsoleArgs(args: unknown[]): string {
   return args
@@ -118,7 +151,10 @@ export function register() {
     return;
   }
 
-  registerOTel({ serviceName });
+  registerOTel({
+    serviceName,
+    spanProcessors: ["auto", new SpanNameProcessor()],
+  });
   registerLogPipeline(serviceName);
   registerMetricPipeline(serviceName);
   bridgeConsoleToOtel(serviceName);

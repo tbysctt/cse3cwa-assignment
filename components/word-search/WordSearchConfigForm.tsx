@@ -115,6 +115,13 @@ export function WordSearchConfigForm({
           </ol>
         </fieldset>
 
+        {words.length === 0 ? (
+          <p className="rounded-(--control-radius) border border-danger/40 bg-danger/10 px-3 py-2 text-xs font-semibold text-danger">
+            Word bank is empty. Add words before configuring a Word Search
+            activity.
+          </p>
+        ) : null}
+
         <Field
           label="Difficulty"
           hint={`Sets grid size and hints. Current: ${gridSize}×${gridSize} grid, hints ${preset.showHints ? "on" : "off"}.`}

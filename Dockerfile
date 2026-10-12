@@ -7,6 +7,14 @@ RUN npm ci --no-audit --no-fund
 
 COPY . .
 
+# Faro RUM collector URL must be baked in at build time (NEXT_PUBLIC_*).
+ARG NEXT_PUBLIC_FARO_URL=http://localhost:12347/collect
+ARG NEXT_PUBLIC_FARO_APP_NAME=phoneme-activity-builder-web
+ARG NEXT_PUBLIC_FARO_APP_NAMESPACE=phoneme-activity-builder
+ENV NEXT_PUBLIC_FARO_URL=$NEXT_PUBLIC_FARO_URL
+ENV NEXT_PUBLIC_FARO_APP_NAME=$NEXT_PUBLIC_FARO_APP_NAME
+ENV NEXT_PUBLIC_FARO_APP_NAMESPACE=$NEXT_PUBLIC_FARO_APP_NAMESPACE
+
 ENV NODE_ENV=production
 RUN npm run build
 

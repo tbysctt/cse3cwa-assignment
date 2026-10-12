@@ -1,5 +1,13 @@
 import { metrics } from "@opentelemetry/api";
 
+import {
+  recordRuntimeActionOutcome,
+  recordRuntimeHealth,
+  recordRuntimeHtmlExport,
+  recordRuntimeUnusualState,
+  type UnusualState,
+} from "@/lib/runtime-stats";
+
 export type ActionOutcome = "success" | "validation" | "not_found" | "error";
 export type ActionResource = "activity" | "word";
 export type HtmlExportOutcome =
@@ -8,6 +16,7 @@ export type HtmlExportOutcome =
   | "generation_error"
   | "error";
 export type HealthStatus = "ok" | "unhealthy";
+export type { UnusualState };
 
 function getMeter() {
   const serviceName = process.env.OTEL_SERVICE_NAME;
@@ -31,6 +40,10 @@ let healthCheckTotal:
   | undefined;
 let healthCheckDuration:
   | ReturnType<NonNullable<ReturnType<typeof getMeter>>["createHistogram"]>
+  | null
+  | undefined;
+let unusualStateTotal:
+  | ReturnType<NonNullable<ReturnType<typeof getMeter>>["createCounter"]>
   | null
   | undefined;
 
@@ -89,6 +102,20 @@ function healthCheckHistogram() {
   return healthCheckDuration;
 }
 
+function unusualStateCounter() {
+  if (unusualStateTotal !== undefined) {
+    return unusualStateTotal;
+  }
+  const meter = getMeter();
+  unusualStateTotal = meter
+    ? meter.createCounter("app.unusual_state.total", {
+        description:
+          "Count of unusual application states (empty lists, generation failures, invalid data)",
+      })
+    : null;
+  return unusualStateTotal;
+}
+
 export function recordActionDuration(
   attributes: {
     action: string;
@@ -98,6 +125,7 @@ export function recordActionDuration(
   durationMs: number,
 ) {
   actionDurationHistogram()?.record(durationMs, attributes);
+  recordRuntimeActionOutcome(attributes.outcome);
 }
 
 export function recordHtmlExport(attributes: {
@@ -105,6 +133,7 @@ export function recordHtmlExport(attributes: {
   outcome: HtmlExportOutcome;
 }) {
   htmlExportCounter()?.add(1, attributes);
+  recordRuntimeHtmlExport(attributes);
 }
 
 export function recordHealthCheck(
@@ -113,4 +142,10 @@ export function recordHealthCheck(
 ) {
   healthCheckCounter()?.add(1, attributes);
   healthCheckHistogram()?.record(durationMs, attributes);
+  recordRuntimeHealth(attributes.status);
+}
+
+export function recordUnusualState(attributes: { state: UnusualState }) {
+  unusualStateCounter()?.add(1, attributes);
+  recordRuntimeUnusualState(attributes.state);
 }
