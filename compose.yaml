@@ -88,7 +88,7 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-lgtm:4318
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_SERVICE_NAME=phoneme-activity-builder
-      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=phoneme-activity-builder
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=phoneme-activity-builder,service.instance.id=phoneme-activity-builder-1
       - OTEL_METRIC_EXPORT_INTERVAL=5000
       - NEXT_PUBLIC_FARO_URL=http://localhost:12347/collect
       - NEXT_PUBLIC_FARO_APP_NAME=phoneme-activity-builder-web
