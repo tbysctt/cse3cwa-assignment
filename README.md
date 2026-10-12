@@ -29,12 +29,37 @@ npm run test
 # Run test coverage report
 npm run test:coverage
 
+# Run Playwright end-to-end tests (starts next dev if needed)
+npx playwright install chromium   # once
+npm run test:e2e
+
 # Run ESLint validation
 npm run lint
 
 # Compile production build
 npm run build
 ```
+
+### Playwright E2E
+
+Specs live in `e2e/`:
+
+- `word-bank-crud.spec.ts` — builder CRUD for the word list (create / update / delete)
+- `wordle-activity.spec.ts` — user use case: Activity Preview interaction + HTML download
+
+Requires Postgres (`docker compose up -d db`) and `DATABASE_URL` (see `.env.example` / `.env.local`).
+
+### JMeter load tests
+
+Staged concurrency (x1, x10, x100, x1000, x10000) against the builder workflow pages and `/health`:
+
+```sh
+brew install jmeter
+npm run build && npm start   # separate terminal
+./load-tests/run.sh
+```
+
+See [`load-tests/README.md`](load-tests/README.md) and results analysis in [`docs/load-testing-results.md`](docs/load-testing-results.md).
 
 ## Activity persistence (Assessment 2)
 
