@@ -5,7 +5,7 @@ import { trace } from "@opentelemetry/api";
  * Injects server-timing traceparent so Faro can correlate browser and server spans.
  * @see https://github.com/grafana/faro-nextjs-example
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   void request;
   const response = NextResponse.next();
   const current = trace.getActiveSpan();
