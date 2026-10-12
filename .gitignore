@@ -12,6 +12,13 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/load-tests/results/*.jtl
+/load-tests/results/*.log
+!/load-tests/results/.gitkeep
 
 # next.js
 /.next/
