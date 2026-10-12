@@ -11,7 +11,21 @@ import {
 } from "@/dal";
 import type { ActionResult } from "@/lib/activity-action-types";
 import { logger } from "@/lib/logger";
+import {
+  recordActionDuration,
+  type ActionOutcome,
+} from "@/lib/metrics";
 import type { PhonemeWord } from "@/lib/phoneme-types";
+
+function classifyActionOutcome(error: unknown): ActionOutcome {
+  if (error instanceof DalValidationError) {
+    return "validation";
+  }
+  if (error instanceof DalNotFoundError) {
+    return "not_found";
+  }
+  return "error";
+}
 
 function toActionError(
   error: unknown,
@@ -62,8 +76,17 @@ export async function listWordsAction(): Promise<ActionResult<PhonemeWord[]>> {
 export async function createWordAction(
   input: BankWordInput,
 ): Promise<ActionResult<PhonemeWord>> {
+  const start = performance.now();
   try {
     const word = await createWord(input);
+    recordActionDuration(
+      {
+        action: "createWord",
+        outcome: "success",
+        resource: "word",
+      },
+      performance.now() - start,
+    );
     logger.info("word.created", {
       action: "createWord",
       "word.id": word.id,
@@ -71,6 +94,14 @@ export async function createWordAction(
     });
     return { ok: true, data: word };
   } catch (error) {
+    recordActionDuration(
+      {
+        action: "createWord",
+        outcome: classifyActionOutcome(error),
+        resource: "word",
+      },
+      performance.now() - start,
+    );
     return toActionError(error, { action: "createWord" });
   }
 }
@@ -79,8 +110,17 @@ export async function updateWordAction(
   id: string,
   input: BankWordInput,
 ): Promise<ActionResult<PhonemeWord>> {
+  const start = performance.now();
   try {
     const word = await updateWord(id, input);
+    recordActionDuration(
+      {
+        action: "updateWord",
+        outcome: "success",
+        resource: "word",
+      },
+      performance.now() - start,
+    );
     logger.info("word.updated", {
       action: "updateWord",
       "word.id": word.id,
@@ -88,6 +128,14 @@ export async function updateWordAction(
     });
     return { ok: true, data: word };
   } catch (error) {
+    recordActionDuration(
+      {
+        action: "updateWord",
+        outcome: classifyActionOutcome(error),
+        resource: "word",
+      },
+      performance.now() - start,
+    );
     return toActionError(error, { action: "updateWord" });
   }
 }
@@ -95,14 +143,31 @@ export async function updateWordAction(
 export async function deleteWordAction(
   id: string,
 ): Promise<ActionResult<{ id: string }>> {
+  const start = performance.now();
   try {
     await deleteWord(id);
+    recordActionDuration(
+      {
+        action: "deleteWord",
+        outcome: "success",
+        resource: "word",
+      },
+      performance.now() - start,
+    );
     logger.info("word.deleted", {
       action: "deleteWord",
       "word.id": id,
     });
     return { ok: true, data: { id } };
   } catch (error) {
+    recordActionDuration(
+      {
+        action: "deleteWord",
+        outcome: classifyActionOutcome(error),
+        resource: "word",
+      },
+      performance.now() - start,
+    );
     return toActionError(error, { action: "deleteWord" });
   }
 }

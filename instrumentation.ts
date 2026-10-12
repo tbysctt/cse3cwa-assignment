@@ -1,10 +1,16 @@
 import { logs, SeverityNumber } from "@opentelemetry/api-logs";
+import { metrics } from "@opentelemetry/api";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
   BatchLogRecordProcessor,
   LoggerProvider,
 } from "@opentelemetry/sdk-logs";
+import {
+  MeterProvider,
+  PeriodicExportingMetricReader,
+} from "@opentelemetry/sdk-metrics";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { registerOTel } from "@vercel/otel";
 import { inspect } from "node:util";
@@ -80,6 +86,27 @@ function registerLogPipeline(serviceName: string) {
   logs.setGlobalLoggerProvider(loggerProvider);
 }
 
+function registerMetricPipeline(serviceName: string) {
+  const exportIntervalMillis = Number(
+    process.env.OTEL_METRIC_EXPORT_INTERVAL || 60_000,
+  );
+
+  const meterProvider = new MeterProvider({
+    resource: resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: serviceName,
+    }),
+    readers: [
+      new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter(),
+        exportIntervalMillis: Number.isFinite(exportIntervalMillis)
+          ? exportIntervalMillis
+          : 60_000,
+      }),
+    ],
+  });
+  metrics.setGlobalMeterProvider(meterProvider);
+}
+
 export function register() {
   const serviceName = process.env.OTEL_SERVICE_NAME;
   const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
@@ -93,6 +120,7 @@ export function register() {
 
   registerOTel({ serviceName });
   registerLogPipeline(serviceName);
+  registerMetricPipeline(serviceName);
   bridgeConsoleToOtel(serviceName);
   console.info(`OpenTelemetry enabled for service "${serviceName}"`);
 }

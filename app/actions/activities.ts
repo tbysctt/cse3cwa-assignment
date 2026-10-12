@@ -26,12 +26,39 @@ import {
   type GeneratedActivityFile,
 } from "@/lib/activity-service";
 import { logger } from "@/lib/logger";
+import {
+  recordActionDuration,
+  recordHtmlExport,
+  type ActionOutcome,
+  type HtmlExportOutcome,
+} from "@/lib/metrics";
+import { WordSearchGenerationError } from "@/lib/word-search";
 
 export type {
   ActionResult,
   SerialisedActivity,
   SerialisedActivitySummary,
 } from "@/lib/activity-action-types";
+
+function classifyActionOutcome(error: unknown): ActionOutcome {
+  if (error instanceof DalValidationError) {
+    return "validation";
+  }
+  if (error instanceof DalNotFoundError) {
+    return "not_found";
+  }
+  return "error";
+}
+
+function classifyHtmlExportOutcome(error: unknown): HtmlExportOutcome {
+  if (error instanceof DalNotFoundError) {
+    return "not_found";
+  }
+  if (error instanceof WordSearchGenerationError) {
+    return "generation_error";
+  }
+  return "error";
+}
 
 function toActionError(
   error: unknown,
@@ -116,8 +143,17 @@ export async function getActivityAction(
 export async function createActivityAction(
   input: CreateActivityInput,
 ): Promise<ActionResult<SerialisedActivity>> {
+  const start = performance.now();
   try {
     const activity = await createActivity(input);
+    recordActionDuration(
+      {
+        action: "createActivity",
+        outcome: "success",
+        resource: "activity",
+      },
+      performance.now() - start,
+    );
     logger.info("activity.created", {
       action: "createActivity",
       "activity.id": activity.id,
@@ -125,6 +161,14 @@ export async function createActivityAction(
     });
     return { ok: true, data: serializeActivity(activity) };
   } catch (error) {
+    recordActionDuration(
+      {
+        action: "createActivity",
+        outcome: classifyActionOutcome(error),
+        resource: "activity",
+      },
+      performance.now() - start,
+    );
     return toActionError(error, { action: "createActivity" });
   }
 }
@@ -133,8 +177,17 @@ export async function updateActivityAction(
   id: string,
   patch: UpdateActivityInput,
 ): Promise<ActionResult<SerialisedActivity>> {
+  const start = performance.now();
   try {
     const activity = await updateActivity(id, patch);
+    recordActionDuration(
+      {
+        action: "updateActivity",
+        outcome: "success",
+        resource: "activity",
+      },
+      performance.now() - start,
+    );
     logger.info("activity.updated", {
       action: "updateActivity",
       "activity.id": activity.id,
@@ -142,6 +195,14 @@ export async function updateActivityAction(
     });
     return { ok: true, data: serializeActivity(activity) };
   } catch (error) {
+    recordActionDuration(
+      {
+        action: "updateActivity",
+        outcome: classifyActionOutcome(error),
+        resource: "activity",
+      },
+      performance.now() - start,
+    );
     return toActionError(error, { action: "updateActivity" });
   }
 }
@@ -149,14 +210,31 @@ export async function updateActivityAction(
 export async function deleteActivityAction(
   id: string,
 ): Promise<ActionResult<{ id: string }>> {
+  const start = performance.now();
   try {
     await deleteActivity(id);
+    recordActionDuration(
+      {
+        action: "deleteActivity",
+        outcome: "success",
+        resource: "activity",
+      },
+      performance.now() - start,
+    );
     logger.info("activity.deleted", {
       action: "deleteActivity",
       "activity.id": id,
     });
     return { ok: true, data: { id } };
   } catch (error) {
+    recordActionDuration(
+      {
+        action: "deleteActivity",
+        outcome: classifyActionOutcome(error),
+        resource: "activity",
+      },
+      performance.now() - start,
+    );
     return toActionError(error, { action: "deleteActivity" });
   }
 }
@@ -164,16 +242,31 @@ export async function deleteActivityAction(
 export async function generateStoredActivityHtmlAction(
   id: string,
 ): Promise<ActionResult<GeneratedActivityFile>> {
+  const start = performance.now();
+  let activityType = "unknown";
   try {
     const activity = await getActivity(id);
     if (!activity) {
       throw new DalNotFoundError(`Activity configuration "${id}" not found.`);
     }
+    activityType = activity.activityType;
     const [inventory, keyboardRows] = await Promise.all([
       listPhonemeInventory(),
       getKeyboardRows(),
     ]);
     const file = buildHtmlFromActivity(activity, { inventory, keyboardRows });
+    recordActionDuration(
+      {
+        action: "generateStoredActivityHtml",
+        outcome: "success",
+        resource: "activity",
+      },
+      performance.now() - start,
+    );
+    recordHtmlExport({
+      "activity.type": activity.activityType,
+      outcome: "success",
+    });
     logger.info("activity.html_generated", {
       action: "generateStoredActivityHtml",
       "activity.id": activity.id,
@@ -181,6 +274,19 @@ export async function generateStoredActivityHtmlAction(
     });
     return { ok: true, data: file };
   } catch (error) {
+    const outcome = classifyActionOutcome(error);
+    recordActionDuration(
+      {
+        action: "generateStoredActivityHtml",
+        outcome,
+        resource: "activity",
+      },
+      performance.now() - start,
+    );
+    recordHtmlExport({
+      "activity.type": activityType,
+      outcome: classifyHtmlExportOutcome(error),
+    });
     return toActionError(error, { action: "generateStoredActivityHtml" });
   }
 }
